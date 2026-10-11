@@ -94,7 +94,15 @@ private fun RootTabPane(
                 Modifier.fillMaxSize()
                     .graphicsLayer()
                     .focusProperties {
-                        canFocus = active
+                        // cwrneirOS consolidation fix (2026-10-08): do NOT force the
+                        // pane's outermost focus target focusable. Home/Search/Library
+                        // content roots are LazyColumns whose scroll anchor is a
+                        // Focusability.Never target; `canFocus = active` turned that
+                        // anchor into a legal 2D candidate, so Right from a rail item
+                        // landed on the invisible, dead-end pane anchor (ring vanished,
+                        // every further direction moved=false). Only opt OUT inactive
+                        // panes; an active pane keeps the anchor non-focusable.
+                        if (!active) canFocus = false
                         // cwrneirOS round 4b: Left from a tab's content returns to the
                         // rail icon that owns the tab. Settings keeps its own
                         // category/content left edges (deeper in the tree).

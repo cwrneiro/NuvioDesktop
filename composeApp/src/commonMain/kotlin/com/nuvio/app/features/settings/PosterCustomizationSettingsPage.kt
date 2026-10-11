@@ -70,6 +70,7 @@ import com.nuvio.app.core.ui.NuvioModalBottomSheet
 import com.nuvio.app.core.ui.PosterCardStyleRepository
 import com.nuvio.app.core.ui.PosterCardStyleUiState
 import com.nuvio.app.core.ui.cardDepthVisual
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.nuvioTracksTextInput
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.action_reset
@@ -209,7 +210,7 @@ internal fun LazyListScope.posterCustomizationSettingsContent(
                     OutlinedTextField(
                         value = editingPattern,
                         onValueChange = { editingPattern = it },
-                        modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(singleLine = false),
+                        modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(),
                         placeholder = {
                             Text(
                                 text = stringResource(Res.string.settings_custom_poster_placeholder),
@@ -219,8 +220,7 @@ internal fun LazyListScope.posterCustomizationSettingsContent(
                         textStyle = MaterialTheme.typography.bodySmall.copy(
                             fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
                         ),
-                        singleLine = false,
-                        maxLines = 4,
+                        singleLine = true,
                     )
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -825,6 +825,7 @@ private fun PosterToggleRow(
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
+            modifier = Modifier.nuvioFocusBorder(RoundedCornerShape(8.dp)),
             colors = SwitchDefaults.colors(
                 checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                 checkedTrackColor = MaterialTheme.colorScheme.primary,
@@ -953,6 +954,7 @@ private fun PosterStyleOptionRow(
                 FilterChip(
                     selected = option.value == selectedValue,
                     onClick = { onSelected(option.value) },
+                    modifier = Modifier.nuvioFocusBorder(RoundedCornerShape(8.dp)),
                     label = { Text(option.label) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,

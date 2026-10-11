@@ -492,8 +492,17 @@ internal fun HomescreenCatalogRow(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            // Mirror SettingsSwitchRow/SettingsNavigationRow: inset 4dp before
+            // nuvioFocusBorder (the ring draws up to 4dp outside the node) so an
+            // enclosing clip cannot shave it; drop the same 4dp from the content
+            // padding so nothing shifts.
+            .padding(horizontal = NuvioTokens.Space.s4)
+            .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4))
             .clickable { onExpandedChange(!expanded) }
-            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
+            .padding(
+                horizontal = horizontalPadding - NuvioTokens.Space.s4,
+                vertical = verticalPadding,
+            ),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(
@@ -561,6 +570,7 @@ internal fun HomescreenCatalogRow(
                 Switch(
                     checked = item.enabled,
                     onCheckedChange = onEnabledChange,
+                    modifier = Modifier.focusProperties { canFocus = false },
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = tokens.colors.onAccent,
                         checkedTrackColor = tokens.colors.accent,
@@ -570,6 +580,7 @@ internal fun HomescreenCatalogRow(
                 )
                 if (item.isPinnedToTop) {
                     IconButton(
+                        modifier = Modifier.focusProperties { canFocus = false },
                         onClick = onPinnedDragAttempt,
                     ) {
                         Icon(
@@ -589,7 +600,7 @@ internal fun HomescreenCatalogRow(
                                     hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 },
                             )
-                        },
+                        }.focusProperties { canFocus = false },
                         onClick = {},
                     ) {
                         Icon(

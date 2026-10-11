@@ -967,6 +967,7 @@ private fun TabletSettingsScreen(
     val categoryEntryRequester = remember { FocusRequester() }
     val contentEntryRequester = remember { FocusRequester() }
     val backRequester = remember { FocusRequester() }
+    val contentGroupRequester = remember { FocusRequester() }
     val focusRequestScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val useNativeNavigation = LocalUseNativeNavigation.current
@@ -978,13 +979,14 @@ private fun TabletSettingsScreen(
             if (SettingsFocusLinks.categoryEntry === categoryEntryRequester) SettingsFocusLinks.categoryEntry = null
             if (SettingsFocusLinks.contentEntry === contentEntryRequester) SettingsFocusLinks.contentEntry = null
             if (SettingsFocusLinks.contentEntry === backRequester) SettingsFocusLinks.contentEntry = null
+            if (SettingsFocusLinks.contentEntry === contentGroupRequester) SettingsFocusLinks.contentEntry = null
         }
     }
-    // cwrneirOS round 4: contentEntry must be a concrete attached node —
-    // the subpage header back button, or the first ringed content row on Root.
-    // A focus-group Box target could fail the redirect and fall through to the
-    // recovery anchor; a concrete node is focused directly.
-    SettingsFocusLinks.contentEntry = if (page == SettingsPage.Root) contentEntryRequester else backRequester
+    // cwrneirOS consolidation fix (2026-10-08): on Root, target the always-composed
+    // content-group Box. Its first row (contentEntryRequester) is uncomposed once the
+    // pane is scrolled, so Right from a category used to no-op; the group redirects
+    // into a placed child. Subpages keep the concrete header back button target.
+    SettingsFocusLinks.contentEntry = if (page == SettingsPage.Root) contentGroupRequester else backRequester
 
     LaunchedEffect(page) {
         if (page.opensInlineOnTablet) {
@@ -1180,6 +1182,7 @@ private fun TabletSettingsScreen(
                         .weight(1f)
                         .nuvioDebugFocusGroupTag("content-group")
                         .focusGroup()
+                        .focusRequester(contentGroupRequester)
                         .focusProperties {
                             // cwrneirOS round 4b: Left from any content node goes
                             // back to the active category (inherited by rows).

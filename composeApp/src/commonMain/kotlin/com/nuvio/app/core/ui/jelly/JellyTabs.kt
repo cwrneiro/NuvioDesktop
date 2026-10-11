@@ -44,6 +44,7 @@ import com.nuvio.app.core.ui.FloatingNavigationItem
 import com.nuvio.app.core.ui.accentBrush
 import com.nuvio.app.core.ui.gradientMask
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioDebugFocusTag
 import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.themePalette
 import com.nuvio.app.core.ui.visualNavIndex
@@ -112,6 +113,7 @@ internal fun JellyTabTargets(
             Box(
                 modifier = Modifier.weight(1f).fillMaxHeight()
                     .nuvioFocusBorder(RoundedCornerShape(50))
+                    .nuvioDebugFocusTag("topbar-tab")
                     .selectable(
                         selected = item.selected,
                         role = Role.Tab,

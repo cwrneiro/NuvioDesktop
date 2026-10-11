@@ -295,7 +295,15 @@ internal fun MainAppContent(
         // navigation is unaffected.
         val anyFocus = PlatformFocusPresence.hasFocus
         LaunchedEffect(anyFocus) {
-            if (!anyFocus) rootFocusAnchor.requestFocus()
+            if (!anyFocus) {
+                // cwrneirOS round 4b: give an in-flight transition focus request
+                // (e.g. the settings subpage back button) a frame to land, then
+                // park on the anchor only if focus is still nowhere. The old
+                // effect captured anyFocus=false and could take focus right back
+                // from the back button, leaving the subpage ring invisible.
+                withFrameNanos { }
+                if (!PlatformFocusPresence.hasFocus) rootFocusAnchor.requestFocus()
+            }
         }
         val liquidGlassNativeTabBarEnabled by remember {
             ThemeSettingsRepository.liquidGlassNativeTabBarEnabled

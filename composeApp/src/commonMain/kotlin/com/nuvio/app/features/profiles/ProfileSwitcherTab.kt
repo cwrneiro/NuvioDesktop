@@ -54,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -86,7 +87,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.chrisbanes.haze.hazeEffect
 import com.nuvio.app.core.ui.NuvioAsyncImage as AsyncImage
 import com.nuvio.app.core.ui.NuvioTokens
+import com.nuvio.app.core.ui.PlatformBackHandler
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioDebugFocusTag
 import com.nuvio.app.core.ui.nuvioFocusBorder
 import dev.chrisbanes.haze.HazeState
 import com.nuvio.app.isIos
@@ -337,6 +340,7 @@ fun SidebarProfileSwitcherStack(
     onProfileSelected: (NuvioProfile) -> Unit,
     onAddProfileRequested: () -> Unit,
     onDismissRequest: () -> Unit,
+    lastRowDownRequester: FocusRequester? = null,
     modifier: Modifier = Modifier,
 ) {
     val profileState by ProfileRepository.state.collectAsStateWithLifecycle()
@@ -349,6 +353,10 @@ fun SidebarProfileSwitcherStack(
         AvatarRepository.fetchAvatars()
         AvatarRepository.refreshAvatars()
     }
+
+    // cwrneirOS round 4b: B/Esc closes the switcher stack. The PIN sub-view
+    // handles its own Esc (onPreviewKeyEvent), so disable this while it shows.
+    PlatformBackHandler(enabled = pinProfile == null) { onDismissRequest() }
 
     fun chooseProfile(profile: NuvioProfile) {
         if (profile.profileIndex == activeProfile?.profileIndex) {
@@ -368,17 +376,28 @@ fun SidebarProfileSwitcherStack(
             Column(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                profiles.forEach { profile ->
+                val hasAddRow = profiles.size < MAX_PROFILES
+                val exitDownModifier = Modifier.focusProperties {
+                    // cwrneirOS round 4b: Down on the last stack row exits the
+                    // switcher to Home (previously it leaked into the settings
+                    // categories through the geometric band).
+                    down = lastRowDownRequester ?: FocusRequester.Cancel
+                }
+                profiles.forEachIndexed { index, profile ->
+                    val isLastRow = !hasAddRow && index == profiles.lastIndex
                     SidebarProfileSwitcherRow(
                         profile = profile,
                         avatars = avatars,
                         isActive = profile.profileIndex == activeProfile?.profileIndex,
+                        modifier = (if (isLastRow) exitDownModifier else Modifier)
+                            .nuvioDebugFocusTag("stack-${profile.name}"),
                         onClick = { chooseProfile(profile) },
                     )
                 }
 
-                if (profiles.size < MAX_PROFILES) {
+                if (hasAddRow) {
                     SidebarAddProfileRow(
+                        modifier = exitDownModifier.nuvioDebugFocusTag("stack-add"),
                         onClick = {
                             onDismissRequest()
                             onAddProfileRequested()
@@ -410,11 +429,12 @@ private fun SidebarProfileSwitcherRow(
     profile: NuvioProfile,
     avatars: List<AvatarCatalogItem>,
     isActive: Boolean,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     val tokens = MaterialTheme.nuvio
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(40.dp)
             .nuvioFocusBorder(tokens.shapes.compactCard)
@@ -467,10 +487,11 @@ private fun SidebarProfileSwitcherRow(
 @Composable
 private fun SidebarAddProfileRow(
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val tokens = MaterialTheme.nuvio
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(40.dp)
             .nuvioFocusBorder(tokens.shapes.compactCard)

@@ -57,6 +57,7 @@ import com.nuvio.app.core.ui.NuvioBackButton
 import com.nuvio.app.core.ui.NuvioSectionLabel
 import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.core.ui.nuvioConsumePointerEvents
+import com.nuvio.app.core.ui.nuvioDebugFocusTag
 import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.nuvioTracksTextInput
 import com.nuvio.app.features.home.HomeCatalogSettingsItem
@@ -149,7 +150,8 @@ internal fun TabletPageHeader(
                             } else {
                                 Modifier
                             },
-                        ),
+                        )
+                        .nuvioDebugFocusTag("back-button"),
                     shape = tokens.shapes.compactCard,
                     containerColor = tokens.colors.surface,
                     contentColor = tokens.colors.textPrimary,
@@ -265,6 +267,11 @@ internal fun SettingsNavigationRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            // nuvioFocusBorder draws outside the node (2.5dp outline inflation +
+            // 1.5dp half stroke = up to 4dp out). Inset the focusable box so the
+            // enclosing SettingsCard Surface(shape) clip cannot shave the
+            // left/right ring strokes; the row background is transparent.
+            .padding(horizontal = NuvioTokens.Space.s4)
             .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4))
             .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = horizontalPadding, vertical = verticalPadding)

@@ -69,7 +69,10 @@ import com.nuvio.app.core.ui.NuvioDesktopVerticalScrollbar
 import com.nuvio.app.core.ui.NuvioScreen
 import com.nuvio.app.core.ui.NuvioScreenHeader
 import com.nuvio.app.core.ui.PlatformBackHandler
+import com.nuvio.app.core.ui.PlatformFocusPresence
 import com.nuvio.app.core.ui.SettingsFocusLinks
+import com.nuvio.app.core.ui.nuvioDebugFocusGroupTag
+import com.nuvio.app.core.ui.nuvioDebugFocusTag
 import com.nuvio.app.navigation.LocalNativeNavigationBarHidden
 import com.nuvio.app.navigation.LocalUseNativeNavigation
 import com.nuvio.app.core.ui.isLiquidGlassNativeTabBarSupported
@@ -994,17 +997,29 @@ private fun TabletSettingsScreen(
         val internalBackAvailable = showInternalHeader &&
             !(useNativeNavigation && !nativeNavigationBarHidden)
         if (page != SettingsPage.Root && internalBackAvailable) {
-            // cwrneirOS round 4: the header back button may not be attached yet
-            // on the first frames after the page swap; keep requesting until the
-            // request sticks so the ring appears immediately (and B has a target).
+            // cwrneirOS round 4/4b: the header back button may not be attached on
+            // the first frames after the page swap; keep requesting until the
+            // request sticks AND survives a following frame — the recovery-anchor
+            // effect or a recomposition could otherwise take focus back and leave
+            // the subpage ring invisible.
             repeat(SettingsContentFocusRetryFrames) {
                 withFrameNanos { }
-                if (backRequester.requestFocus()) return@LaunchedEffect
+                if (backRequester.requestFocus()) {
+                    withFrameNanos { }
+                    if (PlatformFocusPresence.hasFocus && !PlatformFocusPresence.anchorActive) {
+                        return@LaunchedEffect
+                    }
+                }
             }
         } else {
             repeat(SettingsContentFocusRetryFrames) {
                 withFrameNanos { }
-                if (SettingsFocusLinks.categoryEntry?.requestFocus() == true) return@LaunchedEffect
+                if (SettingsFocusLinks.categoryEntry?.requestFocus() == true) {
+                    withFrameNanos { }
+                    if (PlatformFocusPresence.hasFocus && !PlatformFocusPresence.anchorActive) {
+                        return@LaunchedEffect
+                    }
+                }
             }
         }
     }
@@ -1066,7 +1081,11 @@ private fun TabletSettingsScreen(
                                 if (category == SettingsCategory.entries.first()) up = FocusRequester.Cancel
                                 if (category == SettingsCategory.entries.last()) down = FocusRequester.Cancel
                                 SettingsFocusLinks.contentEntry?.let { right = it }
+                                // cwrneirOS round 4b: Left returns to the Settings
+                                // rail icon, the page that owns this column.
+                                SettingsFocusLinks.railEntries[AppScreenTab.Settings]?.let { left = it }
                             }
+                            .nuvioDebugFocusTag("category-${category.name}")
                             .then(if (category == activeCategory) Modifier.focusRequester(categoryEntryRequester) else Modifier),
                     )
                 }
@@ -1152,7 +1171,13 @@ private fun TabletSettingsScreen(
                         .widthIn(max = if (isDesktop) 800.dp else Dp.Unspecified)
                         .fillMaxWidth()
                         .weight(1f)
-                        .focusGroup(),
+                        .nuvioDebugFocusGroupTag("content-group")
+                        .focusGroup()
+                        .focusProperties {
+                            // cwrneirOS round 4b: Left from any content node goes
+                            // back to the active category (inherited by rows).
+                            SettingsFocusLinks.categoryEntry?.let { left = it }
+                        },
                 ) {
                     LazyColumn(
                         state = listState,

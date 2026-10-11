@@ -71,6 +71,7 @@ import com.nuvio.app.core.ui.NuvioNavBarScrollState
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.SettingsFocusLinks
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioDebugFocusTag
 import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.features.cloud.CloudLibraryContentType
 import com.nuvio.app.features.cloud.CloudLibraryFile
@@ -737,6 +738,12 @@ internal fun DesktopHoverSidebar(
     val searchFocusRequester = remember { FocusRequester() }
     val libraryFocusRequester = remember { FocusRequester() }
     val settingsFocusRequester = remember { FocusRequester() }
+    // cwrneirOS round 4b: expose the rail requesters so Left from content/rail can
+    // return to the owning tab icon (read by RootTabHost and SettingsScreen).
+    SettingsFocusLinks.railEntries[AppScreenTab.Home] = homeFocusRequester
+    SettingsFocusLinks.railEntries[AppScreenTab.Search] = searchFocusRequester
+    SettingsFocusLinks.railEntries[AppScreenTab.Library] = libraryFocusRequester
+    SettingsFocusLinks.railEntries[AppScreenTab.Settings] = settingsFocusRequester
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val profileState by ProfileRepository.state.collectAsStateWithLifecycle()
     val avatars by AvatarRepository.avatars.collectAsStateWithLifecycle()
@@ -799,7 +806,14 @@ internal fun DesktopHoverSidebar(
                         // visible, Down keeps the default geometric edge into it.
                         up = FocusRequester.Cancel
                         down = if (profileStackVisible) FocusRequester.Default else homeFocusRequester
+                        // cwrneirOS round 4b: Right on the Settings tab goes to the
+                        // active category (a geometric jump into the top bar left
+                        // the ring invisible).
+                        if (selectedTab == AppScreenTab.Settings) {
+                            SettingsFocusLinks.categoryEntry?.let { right = it }
+                        }
                     }
+                    .nuvioDebugFocusTag("rail-avatar")
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -820,6 +834,7 @@ internal fun DesktopHoverSidebar(
                     onProfileSelected = onProfileSelected,
                     onAddProfileRequested = onAddProfileRequested,
                     onDismissRequest = { onProfileStackVisibleChange(false) },
+                    lastRowDownRequester = homeFocusRequester,
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .padding(top = profileStackTop)
@@ -848,7 +863,8 @@ internal fun DesktopHoverSidebar(
                             if (selectedTab == AppScreenTab.Settings) {
                                 SettingsFocusLinks.categoryEntry?.let { right = it }
                             }
-                        },
+                        }
+                        .nuvioDebugFocusTag("rail-home"),
                 ) { color ->
                     Icon(
                         imageVector = Icons.Filled.Home,
@@ -870,7 +886,8 @@ internal fun DesktopHoverSidebar(
                             if (selectedTab == AppScreenTab.Settings) {
                                 SettingsFocusLinks.categoryEntry?.let { right = it }
                             }
-                        },
+                        }
+                        .nuvioDebugFocusTag("rail-search"),
                 ) { color ->
                     Icon(
                         painter = painterResource(Res.drawable.sidebar_search),
@@ -892,7 +909,8 @@ internal fun DesktopHoverSidebar(
                             if (selectedTab == AppScreenTab.Settings) {
                                 SettingsFocusLinks.categoryEntry?.let { right = it }
                             }
-                        },
+                        }
+                        .nuvioDebugFocusTag("rail-library"),
                 ) { color ->
                     Icon(
                         painter = painterResource(Res.drawable.sidebar_library),
@@ -914,7 +932,8 @@ internal fun DesktopHoverSidebar(
                             if (selectedTab == AppScreenTab.Settings) {
                                 SettingsFocusLinks.categoryEntry?.let { right = it }
                             }
-                        },
+                        }
+                        .nuvioDebugFocusTag("rail-settings"),
                 ) { color ->
                     Icon(
                         imageVector = Icons.Rounded.Settings,

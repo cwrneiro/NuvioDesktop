@@ -69,3 +69,17 @@ fun Modifier.nuvioFocusBorder(
             }
         }
 }
+
+/**
+ * cwrneirOS retest-4b diagnostic: prints when this exact node becomes the focused
+ * target. Pull `nuvio-focus:` lines from the unit journal; removed at closeout.
+ */
+fun Modifier.nuvioDebugFocusTag(label: String): Modifier =
+    onFocusChanged { if (it.isFocused) println("nuvio-focus: $label") }
+
+/**
+ * cwrneirOS retest-4b diagnostic for focus groups (canFocus=false containers):
+ * prints when focus is anywhere inside this subtree.
+ */
+fun Modifier.nuvioDebugFocusGroupTag(label: String): Modifier =
+    onFocusChanged { if (it.hasFocus) println("nuvio-focus: $label *") }

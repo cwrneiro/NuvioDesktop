@@ -24,6 +24,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
 import androidx.lifecycle.compose.rememberLifecycleOwner
 import com.nuvio.app.core.ui.LocalScreenActive
+import com.nuvio.app.core.ui.SettingsFocusLinks
 
 @Composable
 internal fun RootTabHost(
@@ -92,7 +93,15 @@ private fun RootTabPane(
             Box(
                 Modifier.fillMaxSize()
                     .graphicsLayer()
-                    .focusProperties { canFocus = active }
+                    .focusProperties {
+                        canFocus = active
+                        // cwrneirOS round 4b: Left from a tab's content returns to the
+                        // rail icon that owns the tab. Settings keeps its own
+                        // category/content left edges (deeper in the tree).
+                        if (tab != AppScreenTab.Settings) {
+                            SettingsFocusLinks.railEntries[tab]?.let { left = it }
+                        }
+                    }
                     .pointerInput(active) {
                         if (!active) {
                             awaitPointerEventScope {

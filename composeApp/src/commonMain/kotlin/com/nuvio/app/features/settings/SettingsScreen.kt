@@ -1145,11 +1145,10 @@ private fun TabletSettingsScreen(
                     }
                 }
 
-                val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
-                // cwrneirOS: closing/reopening a submenu should start at the top; Root keeps
-                // its position. Uses requestScrollToItem so it applies before the next measure.
-                LaunchedEffect(page) {
-                    if (page != SettingsPage.Root) listState.requestScrollToItem(0)
+                val listState = if (page == SettingsPage.Root) {
+                    rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
+                } else {
+                    remember { LazyListState() }
                 }
                 ScreenActivityEffect(listState) { active ->
                     if (!active) listState.stopScroll()

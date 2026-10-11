@@ -56,6 +56,7 @@ import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.NuvioActionLabel
 import com.nuvio.app.core.ui.NuvioBackButton
 import com.nuvio.app.core.ui.NuvioSectionLabel
+import com.nuvio.app.core.ui.SettingsFocusLinks
 import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.core.ui.nuvioConsumePointerEvents
 import com.nuvio.app.core.ui.nuvioDebugFocusTag
@@ -280,6 +281,7 @@ internal fun SettingsNavigationRow(
             // left/right ring strokes; the row background is transparent.
             .padding(horizontal = NuvioTokens.Space.s4)
             .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4))
+            .focusProperties { SettingsFocusLinks.categoryEntry?.let { left = it } }
             .clickable(enabled = enabled, onClick = onClick)
             // Reclaim the 4dp inset inside the content padding so text and
             // trailing content keep their original absolute position
@@ -372,6 +374,7 @@ internal fun SettingsSwitchRow(
             // strokes; content padding drops by the same 4dp so nothing shifts.
             .padding(horizontal = NuvioTokens.Space.s4)
             .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4))
+            .focusProperties { SettingsFocusLinks.categoryEntry?.let { left = it } }
             .clickable(enabled = enabled) { onCheckedChange(!checked) }
             .padding(
                 horizontal = horizontalPadding - NuvioTokens.Space.s4,

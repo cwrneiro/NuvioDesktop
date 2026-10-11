@@ -35,6 +35,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -45,6 +47,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.AppIconResource
 import com.nuvio.app.core.ui.appIconPainter
+import com.nuvio.app.core.ui.nuvioDebugFocusTag
 import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.secondaryClick
 import nuvio.composeapp.generated.resources.Res
@@ -79,6 +82,7 @@ fun DetailActionButtons(
     isTablet: Boolean = false,
     onPlayClick: () -> Unit = {},
     onPlayLongClick: (() -> Unit)? = null,
+    primaryActionFocusRequester: FocusRequester? = null,
 ) {
     val playPainter = appIconPainter(AppIconResource.PlayerPlay)
     val buttonHeight = if (isTablet) 56.dp else 52.dp
@@ -118,6 +122,14 @@ fun DetailActionButtons(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .then(
+                            if (primaryActionFocusRequester != null) {
+                                Modifier.focusRequester(primaryActionFocusRequester)
+                            } else {
+                                Modifier
+                            },
+                        )
+                        .nuvioDebugFocusTag("detail-play")
                         .combinedClickable(
                             enabled = playEnabled,
                             onClick = {
@@ -261,6 +273,7 @@ fun DetailActions(
     onWatchedClick: () -> Unit,
     onSaveClick: () -> Unit,
     onSaveLongClick: (() -> Unit)?,
+    primaryActionFocusRequester: FocusRequester? = null,
 ) {
     val shuffleAction = onShuffleClick?.let { onClick ->
         DetailSecondaryAction(
@@ -297,6 +310,7 @@ fun DetailActions(
         isTablet = isTablet,
         onPlayClick = onPlayClick,
         onPlayLongClick = onPlayLongClick,
+        primaryActionFocusRequester = primaryActionFocusRequester,
     )
 }
 

@@ -294,6 +294,7 @@ fun ProfileSelectionScreen(
                 Box(
                     modifier = Modifier
                         .graphicsLayer { alpha = manageAlpha.value }
+                        .nuvioFocusBorder(RoundedCornerShape(24.dp))
                         .clip(RoundedCornerShape(24.dp))
                         .background(
                             if (isEditMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)

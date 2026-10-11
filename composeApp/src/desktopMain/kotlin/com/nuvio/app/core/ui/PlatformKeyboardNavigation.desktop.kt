@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
+import com.nuvio.app.core.ui.PlatformFocusPresence
 import java.awt.Component
 import java.awt.Container
 import java.awt.KeyEventDispatcher
@@ -41,16 +42,25 @@ actual fun PlatformKeyboardNavigation() {
                     if (DesktopTextInputState.isMultilineActive) return@KeyEventDispatcher false
             }
 
-            val moved = when (key) {
-                KeyEvent.VK_LEFT -> focusManager.moveFocus(FocusDirection.Left)
-                KeyEvent.VK_RIGHT -> focusManager.moveFocus(FocusDirection.Right)
-                KeyEvent.VK_UP -> focusManager.moveFocus(FocusDirection.Up)
-                KeyEvent.VK_DOWN -> focusManager.moveFocus(FocusDirection.Down)
+            val direction = when (key) {
+                KeyEvent.VK_LEFT -> FocusDirection.Left
+                KeyEvent.VK_RIGHT -> FocusDirection.Right
+                KeyEvent.VK_UP -> FocusDirection.Up
+                KeyEvent.VK_DOWN -> FocusDirection.Down
                 else -> return@KeyEventDispatcher false
+            }
+            var moved = focusManager.moveFocus(direction)
+            if (!moved && PlatformFocusPresence.anchorActive) {
+                // The anchor's far focusRect makes normal 2D search fail while it
+                // is focused; clearing focus restores the usual root-anchored
+                // search for one retry.
+                focusManager.clearFocus(force = true)
+                moved = focusManager.moveFocus(direction)
             }
             println(
                 "nuvio-nav: key=$key moved=$moved text=${DesktopTextInputState.isActive} " +
-                    "ml=${DesktopTextInputState.isMultilineActive}",
+                    "ml=${DesktopTextInputState.isMultilineActive} focus=${PlatformFocusPresence.hasFocus} " +
+                    "anchor=${PlatformFocusPresence.anchorActive}",
             )
             true
         }

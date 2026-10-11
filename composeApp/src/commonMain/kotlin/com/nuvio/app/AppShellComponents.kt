@@ -53,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -66,6 +67,7 @@ import com.nuvio.app.core.ui.LocalNuvioNavBarScrollState
 import com.nuvio.app.core.ui.NuvioLoadingIndicator
 import com.nuvio.app.core.ui.NuvioNavBarScrollState
 import com.nuvio.app.core.ui.NuvioTokens
+import com.nuvio.app.core.ui.SettingsFocusLinks
 import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.features.cloud.CloudLibraryContentType
@@ -862,6 +864,11 @@ internal fun DesktopHoverSidebar(
                     selected = selectedTab == AppScreenTab.Settings,
                     expanded = sidebarExpanded,
                     onClick = { selectTab(AppScreenTab.Settings) },
+                    modifier = Modifier.focusProperties {
+                        if (selectedTab == AppScreenTab.Settings) {
+                            SettingsFocusLinks.categoryEntry?.let { right = it }
+                        }
+                    },
                 ) { color ->
                     Icon(
                         imageVector = Icons.Rounded.Settings,
@@ -941,6 +948,7 @@ private fun DesktopSidebarItem(
     selected: Boolean,
     expanded: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     icon: @Composable (Color) -> Unit,
 ) {
     val tokens = MaterialTheme.nuvio
@@ -949,7 +957,7 @@ private fun DesktopSidebarItem(
 
     Surface(
         onClick = onClick,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(DesktopSidebarItemHeight)
             .padding(horizontal = 6.dp, vertical = 4.dp)

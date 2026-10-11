@@ -33,6 +33,7 @@ import androidx.compose.foundation.gestures.stopScroll
 import com.nuvio.app.core.ui.LocalScreenActive
 import com.nuvio.app.core.ui.ScreenActivityEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,7 +43,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.foundation.focusGroup
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,6 +70,9 @@ import com.nuvio.app.core.ui.NuvioDesktopVerticalScrollbar
 import com.nuvio.app.core.ui.NuvioScreen
 import com.nuvio.app.core.ui.NuvioScreenHeader
 import com.nuvio.app.core.ui.PlatformBackHandler
+import com.nuvio.app.core.ui.SettingsFocusLinks
+import com.nuvio.app.navigation.LocalNativeNavigationBarHidden
+import com.nuvio.app.navigation.LocalUseNativeNavigation
 import com.nuvio.app.core.ui.isLiquidGlassNativeTabBarSupported
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.details.MetaScreenSettingsRepository
@@ -949,9 +959,40 @@ private fun TabletSettingsScreen(
 
     val navBarScrollState = LocalNuvioNavBarScrollState.current
 
+    val categoryEntryRequester = remember { FocusRequester() }
+    val contentEntryRequester = remember { FocusRequester() }
+    val backRequester = remember { FocusRequester() }
+    val focusRequestScope = rememberCoroutineScope()
+    val useNativeNavigation = LocalUseNativeNavigation.current
+    val nativeNavigationBarHidden = LocalNativeNavigationBarHidden.current
+
+    DisposableEffect(Unit) {
+        SettingsFocusLinks.categoryEntry = categoryEntryRequester
+        SettingsFocusLinks.contentEntry = contentEntryRequester
+        onDispose {
+            if (SettingsFocusLinks.categoryEntry === categoryEntryRequester) SettingsFocusLinks.categoryEntry = null
+            if (SettingsFocusLinks.contentEntry === contentEntryRequester) SettingsFocusLinks.contentEntry = null
+        }
+    }
+
     LaunchedEffect(page) {
         if (page.opensInlineOnTablet) {
             selectedCategory = page.category.name
+        }
+    }
+
+    var lastPage by remember { mutableStateOf(page) }
+    LaunchedEffect(page) {
+        val from = lastPage
+        lastPage = page
+        if (page == from) return@LaunchedEffect
+        withFrameNanos { }
+        val internalBackAvailable = showInternalHeader &&
+            !(useNativeNavigation && !nativeNavigationBarHidden)
+        if (page != SettingsPage.Root && internalBackAvailable) {
+            backRequester.requestFocus()
+        } else {
+            SettingsFocusLinks.categoryEntry?.requestFocus()
         }
     }
 
@@ -1000,7 +1041,18 @@ private fun TabletSettingsScreen(
                                     onPageChange(SettingsPage.Root)
                                 }
                             }
+                            focusRequestScope.launch {
+                                withFrameNanos { }
+                                SettingsFocusLinks.contentEntry?.requestFocus(FocusDirection.Down)
+                            }
                         },
+                        modifier = Modifier
+                            .focusProperties {
+                                if (category == SettingsCategory.entries.first()) up = FocusRequester.Cancel
+                                if (category == SettingsCategory.entries.last()) down = FocusRequester.Cancel
+                                SettingsFocusLinks.contentEntry?.let { right = it }
+                            }
+                            .then(if (category == activeCategory) Modifier.focusRequester(categoryEntryRequester) else Modifier),
                     )
                 }
             }
@@ -1084,7 +1136,9 @@ private fun TabletSettingsScreen(
                         .align(Alignment.CenterHorizontally)
                         .widthIn(max = if (isDesktop) 800.dp else Dp.Unspecified)
                         .fillMaxWidth()
-                        .weight(1f),
+                        .weight(1f)
+                        .focusRequester(contentEntryRequester)
+                        .focusGroup(),
                 ) {
                     LazyColumn(
                         state = listState,
@@ -1114,6 +1168,7 @@ private fun TabletSettingsScreen(
                                     },
                                     showBack = previousPage != null,
                                     onBack = { if (previousPage != null) onNavigateBack() },
+                                    backFocusRequester = backRequester,
                                 )
                             }
                         }

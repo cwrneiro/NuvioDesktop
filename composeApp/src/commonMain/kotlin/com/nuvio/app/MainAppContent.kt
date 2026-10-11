@@ -8,8 +8,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -37,6 +39,11 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -46,6 +53,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
@@ -80,12 +88,14 @@ import com.nuvio.app.core.ui.NuvioPosterZoomActionOverlay
 import com.nuvio.app.core.ui.NuvioStatusModal
 import com.nuvio.app.core.ui.NuvioToastController
 import com.nuvio.app.core.ui.NuvioToastHost
+import com.nuvio.app.core.ui.PlatformFocusPresence
 import com.nuvio.app.core.ui.PlatformTextInputState
 import com.nuvio.app.core.ui.PosterZoomAnchor
 import com.nuvio.app.core.ui.PosterZoomAnchorHolder
 import com.nuvio.app.core.ui.PosterZoomOverlayAction
 import com.nuvio.app.core.ui.PosterZoomOverlayExitAnimation
 import com.nuvio.app.core.ui.TrackingListPickerDialog
+import com.nuvio.app.core.ui.focusPresenceMonitor
 import com.nuvio.app.core.ui.isLiquidGlassNativeTabBarSupported
 import com.nuvio.app.core.ui.localizedContinueWatchingSubtitle
 import com.nuvio.app.core.ui.nuvio
@@ -245,6 +255,7 @@ internal fun MainAppContent(
         val appUpdaterController = rememberAppUpdaterController()
         val hapticFeedback = LocalHapticFeedback.current
         val focusManager = LocalFocusManager.current
+        val rootFocusAnchor = remember { FocusRequester() }
         val uriHandler = LocalUriHandler.current
         val coroutineScope = rememberCoroutineScope()
         var selectedTab by rememberSaveable(initialTab) { mutableStateOf(initialTab) }
@@ -274,6 +285,14 @@ internal fun MainAppContent(
         }
         DisposableEffect(posterNavigation) {
             onDispose { posterNavigation.clear() }
+        }
+        // Focus recovery: when nothing in the main scene holds focus (e.g. after
+        // navigating into a subpage clears it), park focus on the off-screen root
+        // anchor so hardware Esc/B keeps working. The anchor's far focusRect keeps
+        // it out of every 2D search, so normal navigation is unaffected.
+        val anyFocus = PlatformFocusPresence.hasFocus
+        LaunchedEffect(anyFocus) {
+            if (!anyFocus) rootFocusAnchor.requestFocus()
         }
         val liquidGlassNativeTabBarEnabled by remember {
             ThemeSettingsRepository.liquidGlassNativeTabBarEnabled
@@ -1251,6 +1270,7 @@ internal fun MainAppContent(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.nuvio.colors.background)
+                    .focusPresenceMonitor()
                     .onKeyEvent { event ->
                         if (event.type == KeyEventType.KeyDown && event.key == Key.Escape) {
                             if (PlatformTextInputState.isActive) {
@@ -2101,6 +2121,16 @@ internal fun MainAppContent(
                     .align(Alignment.TopCenter)
                     .zIndex(20f),
             )
+
+            Box(
+                Modifier
+                    .size(0.dp)
+                    .focusProperties { focusRect = Rect(10_000f, 10_000f, 10_000f, 10_000f) }
+                    .onFocusChanged { PlatformFocusPresence.anchorActive = it.isFocused }
+                    .focusRequester(rootFocusAnchor)
+                    .focusable(),
+            ) {
+            }
 
             }
         }

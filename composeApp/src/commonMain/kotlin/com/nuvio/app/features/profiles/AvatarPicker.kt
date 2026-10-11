@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.nuvio.app.core.ui.nuvioFocusBorder
 
 @Composable
 internal fun AvatarPicker(
@@ -66,6 +67,7 @@ private fun AvatarChoiceItem(
 ) {
     Box(
         modifier = modifier
+            .nuvioFocusBorder(CircleShape)
             .clip(CircleShape)
             .background(
                 avatar.bgColor?.let(::parseHexColor)

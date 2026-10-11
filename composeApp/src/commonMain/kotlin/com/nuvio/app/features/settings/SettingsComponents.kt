@@ -39,6 +39,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -120,6 +122,7 @@ internal fun TabletPageHeader(
     title: String,
     showBack: Boolean,
     onBack: () -> Unit,
+    backFocusRequester: FocusRequester? = null,
 ) {
     val tokens = MaterialTheme.nuvio
     Box(
@@ -139,7 +142,14 @@ internal fun TabletPageHeader(
                 NuvioBackButton(
                     onClick = onBack,
                     modifier = Modifier
-                        .size(36.dp),
+                        .size(36.dp)
+                        .then(
+                            if (backFocusRequester != null) {
+                                Modifier.focusRequester(backFocusRequester)
+                            } else {
+                                Modifier
+                            },
+                        ),
                     shape = tokens.shapes.compactCard,
                     containerColor = tokens.colors.surface,
                     contentColor = tokens.colors.textPrimary,
@@ -163,6 +173,7 @@ internal fun SettingsSidebarItem(
     icon: ImageVector,
     selected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val tokens = MaterialTheme.nuvio
     val primary = tokens.colors.accent
@@ -172,7 +183,7 @@ internal fun SettingsSidebarItem(
 
     val sidebarItemShape = RoundedCornerShape(NuvioTokens.Space.s10)
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = tokens.spacing.listGap, vertical = NuvioTokens.Space.s2)
             .background(background, sidebarItemShape)

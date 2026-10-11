@@ -23,22 +23,35 @@ actual fun PlatformKeyboardNavigation() {
 
     DisposableEffect(Unit) {
         val dispatcher = KeyEventDispatcher { event: KeyEvent ->
-            // Compose text fields are not AWT components, so isArrowKeyConsumer()
-            // cannot see them; while one holds focus, let Compose handle arrows
-            // (caret movement) instead of consuming them for focus traversal.
-            if (DesktopTextInputState.isActive) return@KeyEventDispatcher false
             if (event.id != KeyEvent.KEY_PRESSED) return@KeyEventDispatcher false
             if (KeyboardFocusManager.getCurrentKeyboardFocusManager()
                     .focusOwner.isArrowKeyConsumer()
             ) return@KeyEventDispatcher false
 
-            when (event.keyCode) {
+            // Compose text fields are not AWT components, so isArrowKeyConsumer()
+            // cannot see them. Gate per key instead of blanket-passing arrows:
+            // Left/Right always belong to the caret while a field is focused,
+            // but Up/Down belong to the caret only in a multiline field; in a
+            // single-line field they move nothing and must still traverse focus.
+            val key = event.keyCode
+            when (key) {
+                KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT ->
+                    if (DesktopTextInputState.isActive) return@KeyEventDispatcher false
+                KeyEvent.VK_UP, KeyEvent.VK_DOWN ->
+                    if (DesktopTextInputState.isMultilineActive) return@KeyEventDispatcher false
+            }
+
+            val moved = when (key) {
                 KeyEvent.VK_LEFT -> focusManager.moveFocus(FocusDirection.Left)
                 KeyEvent.VK_RIGHT -> focusManager.moveFocus(FocusDirection.Right)
                 KeyEvent.VK_UP -> focusManager.moveFocus(FocusDirection.Up)
                 KeyEvent.VK_DOWN -> focusManager.moveFocus(FocusDirection.Down)
                 else -> return@KeyEventDispatcher false
             }
+            println(
+                "nuvio-nav: key=$key moved=$moved text=${DesktopTextInputState.isActive} " +
+                    "ml=${DesktopTextInputState.isMultilineActive}",
+            )
             true
         }
         KeyboardFocusManager.getCurrentKeyboardFocusManager()

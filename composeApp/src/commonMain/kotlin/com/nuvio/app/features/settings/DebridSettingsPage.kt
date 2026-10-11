@@ -666,7 +666,7 @@ private fun DebridTemplateDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 140.dp, max = 280.dp)
-                .nuvioTracksTextInput(),
+                .nuvioTracksTextInput(singleLine = false),
             minLines = 5,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
@@ -1110,7 +1110,7 @@ private fun DebridTextListDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 120.dp)
-                .nuvioTracksTextInput(),
+                .nuvioTracksTextInput(singleLine = false),
             minLines = 4,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),

@@ -381,7 +381,7 @@ private fun ImportDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(160.dp)
-                .nuvioTracksTextInput(),
+                .nuvioTracksTextInput(singleLine = false),
             placeholder = {
                 Text(
                     stringResource(Res.string.collections_import_json_placeholder),

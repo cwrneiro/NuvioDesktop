@@ -36,6 +36,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -79,6 +80,7 @@ import com.nuvio.app.core.ui.NuvioPosterZoomActionOverlay
 import com.nuvio.app.core.ui.NuvioStatusModal
 import com.nuvio.app.core.ui.NuvioToastController
 import com.nuvio.app.core.ui.NuvioToastHost
+import com.nuvio.app.core.ui.PlatformTextInputState
 import com.nuvio.app.core.ui.PosterZoomAnchor
 import com.nuvio.app.core.ui.PosterZoomAnchorHolder
 import com.nuvio.app.core.ui.PosterZoomOverlayAction
@@ -1251,10 +1253,19 @@ internal fun MainAppContent(
                     .background(MaterialTheme.nuvio.colors.background)
                     .onKeyEvent { event ->
                         if (event.type == KeyEventType.KeyDown && event.key == Key.Escape) {
-                            if (!PlatformBackDispatcher.dispatch()) {
-                                navController.popBackStack()
+                            if (PlatformTextInputState.isActive) {
+                                // Esc leaves a focused text field before it can
+                                // trigger back navigation.
+                                if (!focusManager.moveFocus(FocusDirection.Previous)) {
+                                    focusManager.clearFocus(force = true)
+                                }
+                                true
+                            } else {
+                                if (!PlatformBackDispatcher.dispatch()) {
+                                    navController.popBackStack()
+                                }
+                                true
                             }
-                            true
                         } else {
                             false
                         }

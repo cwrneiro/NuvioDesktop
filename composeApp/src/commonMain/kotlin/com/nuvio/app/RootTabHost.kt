@@ -36,7 +36,12 @@ internal fun RootTabHost(
     val parentLifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
     val hostActive = active && parentLifecycleState.isAtLeast(Lifecycle.State.STARTED)
     val focusManager = LocalFocusManager.current
-    DisposableEffect(selectedTab, hostActive, profileId) {
+    // Tab changes must not clear focus: RootTabPane's `focusProperties { canFocus = active }`
+    // already clears focus inside a deactivated pane; the eager clear left focus nowhere,
+    // which on hardware made the ring vanish after selecting Settings, made arrows/Tab behave
+    // inconsistently, and made B/Esc be dropped until an arrow re-established focus.
+    // Keep the clear for profile switch/host disposal.
+    DisposableEffect(profileId) {
         onDispose { focusManager.clearFocus(force = true) }
     }
 

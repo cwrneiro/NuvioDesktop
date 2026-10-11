@@ -60,6 +60,7 @@ import com.nuvio.app.core.ui.landscapePosterWidth
 import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
 import com.nuvio.app.core.ui.desktopPosterHoverScale
 import com.nuvio.app.core.ui.nuvioCardDepth
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.posterCardClickable
 import com.nuvio.app.core.ui.posterGridColumnCountForViewport
 import com.nuvio.app.core.ui.NuvioLoadingIndicator
@@ -387,6 +388,7 @@ private fun CatalogPosterTile(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(item.posterShape.catalogAspectRatio())
+                    .nuvioFocusBorder(RoundedCornerShape(cornerRadiusDp.dp))
                     .clip(RoundedCornerShape(cornerRadiusDp.dp))
                     .background(MaterialTheme.colorScheme.surface)
                     .nuvioCardDepth(

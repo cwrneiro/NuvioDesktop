@@ -67,6 +67,7 @@ fun MenuItem(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = NuvioTokens.Space.s8)
+            .nuvioFocusBorder(tokens.shapes.compactCard)
             .clip(tokens.shapes.compactCard)
             .background(if (selected) tokens.colors.accent.copy(alpha = tokens.opacity.hover) else Color.Transparent)
             .clickable(enabled = enabled, onClick = onClick)

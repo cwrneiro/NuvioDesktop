@@ -479,6 +479,7 @@ private class NuvioClassicNavigationBarScopeImpl(
                     .widthIn(max = tokens.components.navItemMaxWidth)
                     .fillMaxWidth()
                     .weight(1f, fill = false)
+                    .nuvioFocusBorder(tokens.components.navItemShape)
                     .clip(tokens.components.navItemShape)
                     .selectable(
                         selected = selected,
@@ -517,6 +518,7 @@ private class NuvioClassicNavigationBarScopeImpl(
                     .widthIn(max = tokens.components.navItemMaxWidth)
                     .fillMaxWidth()
                     .weight(1f, fill = false)
+                    .nuvioFocusBorder(tokens.components.navItemShape)
                     .clip(tokens.components.navItemShape)
                     .selectable(
                         selected = selected,
@@ -549,6 +551,7 @@ private class NuvioClassicNavigationBarScopeImpl(
                     .widthIn(max = tokens.components.navItemMaxWidth)
                     .fillMaxWidth()
                     .weight(1f, fill = false)
+                    .nuvioFocusBorder(tokens.components.navItemShape)
                     .clip(tokens.components.navItemShape)
                     .selectable(
                         selected = selected,

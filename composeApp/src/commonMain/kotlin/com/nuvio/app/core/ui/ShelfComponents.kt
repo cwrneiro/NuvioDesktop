@@ -447,6 +447,7 @@ private fun NuvioViewAllPill(
                 color = tokens.colors.surface,
                 shape = RoundedCornerShape(NuvioTokens.Radius.xl),
             )
+            .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Radius.xl))
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center,
     ) {

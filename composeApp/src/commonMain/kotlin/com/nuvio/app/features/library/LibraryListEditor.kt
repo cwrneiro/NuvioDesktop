@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.nuvioTracksTextInput
 import com.nuvio.app.features.tracking.LibraryListPrivacy
 import com.nuvio.app.features.tracking.TrackingListManagementCapabilities
@@ -100,7 +101,7 @@ internal fun LibraryListEditor(
                                 border = BorderStroke(1.dp, if (selected) tokens.colors.accent.copy(alpha = 0.5f) else tokens.colors.borderSubtle),
                             ) {
                                 Row(
-                                    modifier = Modifier.selectable(selected, enabled = !state.isPending, role = Role.RadioButton) {
+                                    modifier = Modifier.nuvioFocusBorder(tokens.shapes.compactCard).selectable(selected, enabled = !state.isPending, role = Role.RadioButton) {
                                         onPrivacyChange(privacy)
                                     }.padding(horizontal = 14.dp, vertical = 14.dp),
                                     horizontalArrangement = Arrangement.spacedBy(10.dp),

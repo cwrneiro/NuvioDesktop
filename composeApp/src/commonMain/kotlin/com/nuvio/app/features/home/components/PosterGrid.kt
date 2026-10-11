@@ -32,6 +32,7 @@ import com.nuvio.app.core.ui.NuvioPosterWatchedOverlay
 import com.nuvio.app.core.ui.SkeletonPoster
 import com.nuvio.app.core.ui.desktopPosterHoverScale
 import com.nuvio.app.core.ui.nuvioCardDepth
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.posterCardClickable
 import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
 import com.nuvio.app.features.home.MetaPreview
@@ -130,6 +131,7 @@ private fun PosterGridTile(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(item.posterShape.posterGridAspectRatio())
+                    .nuvioFocusBorder(RoundedCornerShape(cornerRadiusDp.dp))
                     .clip(RoundedCornerShape(cornerRadiusDp.dp))
                     .background(MaterialTheme.colorScheme.surface)
                     .nuvioCardDepth(

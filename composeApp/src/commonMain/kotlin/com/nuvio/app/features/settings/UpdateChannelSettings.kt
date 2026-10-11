@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.SystemUpdate
@@ -28,7 +29,9 @@ import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.DialogButton
 import com.nuvio.app.core.ui.DialogButtons
 import com.nuvio.app.core.ui.DialogSurface
+import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.features.updater.AppUpdaterPlatform
 import com.nuvio.app.features.updater.UpdateChannel
 import com.nuvio.app.features.updater.UpdatePreferences
@@ -67,7 +70,7 @@ internal fun UpdateChannelSettingsRow(isTablet: Boolean) {
             ) {
                 UpdateChannel.entries.filter { it != UpdateChannel.ALL_RELEASES }.forEach { option ->
                     Row(
-                        modifier = Modifier.fillMaxWidth().selectable(
+                        modifier = Modifier.fillMaxWidth().nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4)).selectable(
                             selected = option == channel,
                             role = Role.RadioButton,
                             onClick = {

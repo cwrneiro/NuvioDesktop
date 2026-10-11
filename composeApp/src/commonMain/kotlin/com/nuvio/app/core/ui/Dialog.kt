@@ -182,6 +182,7 @@ fun DialogOption(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .nuvioFocusBorder(tokens.shapes.compactCard)
             .clip(tokens.shapes.compactCard)
             .background(
                 if (selected) {

@@ -112,6 +112,7 @@ fun NuvioBottomSheetActionRow(
             .fillMaxWidth()
             .padding(horizontal = NuvioTokens.Space.s8)
             .heightIn(min = NuvioTokens.Space.s56)
+            .nuvioFocusBorder(tokens.shapes.compactCard)
             .clip(tokens.shapes.compactCard)
             .background(if (selected) tokens.colors.accent.copy(alpha = tokens.opacity.hover) else Color.Transparent)
             .clickable(onClick = onClick)

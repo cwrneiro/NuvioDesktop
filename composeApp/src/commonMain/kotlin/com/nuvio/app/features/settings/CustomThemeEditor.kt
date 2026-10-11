@@ -46,6 +46,7 @@ import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.dismissNuvioBottomSheet
 import com.nuvio.app.core.ui.formatHexColor
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.parseHexColor
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.Res
@@ -222,6 +223,7 @@ private fun ThemeColorSlot(
     val tokens = MaterialTheme.nuvio
     Column(
         modifier = modifier
+            .nuvioFocusBorder(tokens.shapes.compactCard)
             .clip(tokens.shapes.compactCard)
             .border(
                 tokens.borders.medium,

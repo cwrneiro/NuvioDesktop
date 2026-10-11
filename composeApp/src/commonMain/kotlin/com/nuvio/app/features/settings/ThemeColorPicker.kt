@@ -34,6 +34,7 @@ import com.nuvio.app.core.ui.HsvColor
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.formatHexColor
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import kotlin.math.roundToInt
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.custom_theme_brightness
@@ -72,6 +73,7 @@ internal fun ThemeColorPicker(
             colorSwatches.forEach { swatch ->
                 Box(
                     Modifier
+                        .nuvioFocusBorder(CircleShape)
                         .size(NuvioTokens.Space.s48)
                         .clip(CircleShape)
                         .selectable(color == swatch, role = Role.RadioButton, onClick = { onColorChanged(swatch) })

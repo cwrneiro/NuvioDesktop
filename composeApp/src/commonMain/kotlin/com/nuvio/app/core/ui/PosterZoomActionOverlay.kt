@@ -525,6 +525,7 @@ private fun PosterZoomMenuRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s20))
             .clickable(enabled = enabled, onClick = onSelected)
             .padding(horizontal = NuvioTokens.Space.s18, vertical = NuvioTokens.Space.s16),
         horizontalArrangement = Arrangement.spacedBy(NuvioTokens.Space.s12),

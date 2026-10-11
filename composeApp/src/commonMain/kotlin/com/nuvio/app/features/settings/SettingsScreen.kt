@@ -50,6 +50,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -1145,6 +1146,11 @@ private fun TabletSettingsScreen(
                 }
 
                 val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
+                // cwrneirOS: closing/reopening a submenu should start at the top; Root keeps
+                // its position. Uses requestScrollToItem so it applies before the next measure.
+                LaunchedEffect(page) {
+                    if (page != SettingsPage.Root) listState.requestScrollToItem(0)
+                }
                 ScreenActivityEffect(listState) { active ->
                     if (!active) listState.stopScroll()
                 }
@@ -1190,6 +1196,7 @@ private fun TabletSettingsScreen(
                         .fillMaxWidth()
                         .weight(1f)
                         .nuvioDebugFocusGroupTag("content-group")
+                        .focusRestorer()
                         .focusGroup()
                         .focusRequester(contentGroupRequester)
                         .focusProperties {
@@ -1202,6 +1209,7 @@ private fun TabletSettingsScreen(
                         state = listState,
                         modifier = Modifier
                             .fillMaxSize()
+                            .focusRestorer()
                             .nestedScroll(rootSearchRevealConnection),
                         contentPadding = PaddingValues(
                             start = 40.dp,

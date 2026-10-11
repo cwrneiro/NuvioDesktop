@@ -529,6 +529,7 @@ private fun SearchRecentRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .nuvioFocusBorder(RoundedCornerShape(16.dp))
             .clickable(onClick = onSearchPress)
             .padding(vertical = 2.dp)
             .background(

@@ -167,6 +167,7 @@ private fun CastItem(
             modifier = Modifier
                 .then(avatarSharedElementModifier)
                 .size(sizing.avatarSize)
+                .nuvioFocusBorder(CircleShape)
                 .clip(CircleShape)
                 .background(
                     color = MaterialTheme.colorScheme.surfaceVariant,
@@ -175,8 +176,7 @@ private fun CastItem(
                 .nuvioCardDepth(
                     shape = CircleShape,
                     surface = NuvioCardDepthSurface.Cast,
-                )
-                .nuvioFocusBorder(CircleShape),
+                ),
             contentAlignment = Alignment.Center,
         ) {
             if (person.photo != null) {

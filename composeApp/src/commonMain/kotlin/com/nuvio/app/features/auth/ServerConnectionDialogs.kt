@@ -49,6 +49,7 @@ import com.nuvio.app.core.ui.NuvioLoadingIndicator
 import com.nuvio.app.core.ui.NuvioModalBottomSheet
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioTracksTextInput
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.action_cancel
 import nuvio.composeapp.generated.resources.server_connect_action
@@ -181,7 +182,7 @@ internal fun ServerConnectionSheet(
             OutlinedTextField(
                 value = url,
                 onValueChange = { url = it },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(),
                 enabled = !state.isDiscovering,
                 singleLine = true,
                 placeholder = { Text(stringResource(Res.string.server_connect_url_placeholder)) },

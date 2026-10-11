@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioTracksTextInput
 import com.nuvio.app.isDesktop
 import com.nuvio.app.isIos
 import com.nuvio.app.supportsPosterNavigationMotion
@@ -1187,7 +1188,7 @@ private fun SettingsSearchField(
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(),
         singleLine = true,
         shape = tokens.shapes.compactCard,
         leadingIcon = {

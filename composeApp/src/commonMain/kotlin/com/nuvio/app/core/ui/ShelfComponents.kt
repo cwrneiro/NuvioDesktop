@@ -266,13 +266,13 @@ fun NuvioPosterCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(shape.aspectRatio)
+                .nuvioFocusBorder(cardShape)
                 .clip(cardShape)
                 .background(tokens.colors.surface)
                 .nuvioCardDepth(
                     shape = cardShape,
                     surface = NuvioCardDepthSurface.Posters,
                 )
-                .nuvioFocusBorder(cardShape)
                 .posterCardClickable(
                     onClick = onClick,
                     onLongClick = onLongClick,

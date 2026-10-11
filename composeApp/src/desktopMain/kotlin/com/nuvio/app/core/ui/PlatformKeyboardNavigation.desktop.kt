@@ -23,6 +23,10 @@ actual fun PlatformKeyboardNavigation() {
 
     DisposableEffect(Unit) {
         val dispatcher = KeyEventDispatcher { event: KeyEvent ->
+            // Compose text fields are not AWT components, so isArrowKeyConsumer()
+            // cannot see them; while one holds focus, let Compose handle arrows
+            // (caret movement) instead of consuming them for focus traversal.
+            if (DesktopTextInputState.isActive) return@KeyEventDispatcher false
             if (event.id != KeyEvent.KEY_PRESSED) return@KeyEventDispatcher false
             if (KeyboardFocusManager.getCurrentKeyboardFocusManager()
                     .focusOwner.isArrowKeyConsumer()

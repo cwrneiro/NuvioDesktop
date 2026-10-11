@@ -22,6 +22,7 @@ import com.nuvio.app.core.ui.DialogButtonStyle
 import com.nuvio.app.core.ui.DialogOption
 import com.nuvio.app.core.ui.DialogSurface
 import com.nuvio.app.core.ui.NuvioLoadingIndicator
+import com.nuvio.app.core.ui.nuvioTracksTextInput
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -664,7 +665,8 @@ private fun DebridTemplateDialog(
             onValueChange = { draft = it },
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 140.dp, max = 280.dp),
+                .heightIn(min = 140.dp, max = 280.dp)
+                .nuvioTracksTextInput(),
             minLines = 5,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
@@ -1107,7 +1109,8 @@ private fun DebridTextListDialog(
             onValueChange = { value = it },
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 120.dp),
+                .heightIn(min = 120.dp)
+                .nuvioTracksTextInput(),
             minLines = 4,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
@@ -1634,7 +1637,7 @@ private fun DebridApiKeyDialog(
                 draft = it
                 validationMessage = null
             },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(),
             singleLine = true,
             placeholder = { Text(placeholder) },
             colors = OutlinedTextFieldDefaults.colors(

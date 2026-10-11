@@ -414,6 +414,7 @@ private fun ProfileAvatarCard(
                 scaleY = animScale.value * pressScale
                 translationY = animOffset.value
             }
+            .nuvioFocusBorder(profileShape)
             .clip(profileShape)
             .then(
                 if (isDesktop) {
@@ -422,7 +423,6 @@ private fun ProfileAvatarCard(
                     Modifier
                 },
             )
-            .nuvioFocusBorder(profileShape)
             .clickable(
                 enabled = enabled,
                 interactionSource = interactionSource,
@@ -573,8 +573,8 @@ private fun AddProfileCard(
                 scaleY = animScale.value * pressScale
                 translationY = animOffset.value
             }
-            .clip(addProfileShape)
             .nuvioFocusBorder(addProfileShape)
+            .clip(addProfileShape)
             .clickable(
                 enabled = enabled,
                 interactionSource = interactionSource,

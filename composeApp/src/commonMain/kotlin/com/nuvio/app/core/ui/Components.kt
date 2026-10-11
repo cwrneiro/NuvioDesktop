@@ -366,7 +366,7 @@ fun NuvioInputField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().nuvioTracksTextInput(),
         singleLine = true,
         shape = RoundedCornerShape(NuvioTokens.Radius.lg),
         placeholder = {

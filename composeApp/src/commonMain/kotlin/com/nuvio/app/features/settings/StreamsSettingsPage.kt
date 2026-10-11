@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioTracksTextInput
 import com.nuvio.app.features.streams.STREAM_BADGE_IMPORT_LIMIT
 import com.nuvio.app.features.streams.StreamBadgeChip
 import com.nuvio.app.features.streams.StreamBadgeChipSize
@@ -343,7 +344,7 @@ private fun BadgeUrlManagerDialog(
                 draftUrl = it
                 errorMessage = null
             },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(),
             label = { Text(stringResource(Res.string.settings_fusion_badge_url_label)) },
             singleLine = false,
             minLines = 2,

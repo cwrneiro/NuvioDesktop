@@ -34,21 +34,15 @@ actual fun PlatformKeyboardNavigation() {
             // Left/Right always belong to the caret while a field is focused,
             // but Up/Down belong to the caret only in a multiline field; in a
             // single-line field they move nothing and must still traverse focus.
-            val key = event.keyCode
-            when (key) {
-                KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT ->
-                    if (DesktopTextInputState.isActive) return@KeyEventDispatcher false
-                KeyEvent.VK_UP, KeyEvent.VK_DOWN ->
-                    if (DesktopTextInputState.isMultilineActive) return@KeyEventDispatcher false
-            }
+            val navKey = event.toNuvioNavKey() ?: return@KeyEventDispatcher false
+            if (!shouldConsumeArrowForFocusNav(
+                    navKey,
+                    DesktopTextInputState.isActive,
+                    DesktopTextInputState.isMultilineActive,
+                )
+            ) return@KeyEventDispatcher false
 
-            val direction = when (key) {
-                KeyEvent.VK_LEFT -> FocusDirection.Left
-                KeyEvent.VK_RIGHT -> FocusDirection.Right
-                KeyEvent.VK_UP -> FocusDirection.Up
-                KeyEvent.VK_DOWN -> FocusDirection.Down
-                else -> return@KeyEventDispatcher false
-            }
+            val direction = navKey.toFocusDirection()
             var moved = focusManager.moveFocus(direction)
             if (!moved && PlatformFocusPresence.anchorActive) {
                 // The anchor's far focusRect makes normal 2D search fail while it
@@ -57,8 +51,8 @@ actual fun PlatformKeyboardNavigation() {
                 focusManager.clearFocus(force = true)
                 moved = focusManager.moveFocus(direction)
             }
-            println(
-                "nuvio-nav: key=$key moved=$moved text=${DesktopTextInputState.isActive} " +
+            NuvioFocusDiagnostics.log(
+                "nuvio-nav: key=${event.keyCode} moved=$moved text=${DesktopTextInputState.isActive} " +
                     "ml=${DesktopTextInputState.isMultilineActive} focus=${PlatformFocusPresence.hasFocus} " +
                     "anchor=${PlatformFocusPresence.anchorActive}",
             )
@@ -71,6 +65,21 @@ actual fun PlatformKeyboardNavigation() {
                 .removeKeyEventDispatcher(dispatcher)
         }
     }
+}
+
+private fun KeyEvent.toNuvioNavKey(): NuvioNavKey? = when (keyCode) {
+    KeyEvent.VK_LEFT -> NuvioNavKey.Left
+    KeyEvent.VK_RIGHT -> NuvioNavKey.Right
+    KeyEvent.VK_UP -> NuvioNavKey.Up
+    KeyEvent.VK_DOWN -> NuvioNavKey.Down
+    else -> null
+}
+
+private fun NuvioNavKey.toFocusDirection(): FocusDirection = when (this) {
+    NuvioNavKey.Left -> FocusDirection.Left
+    NuvioNavKey.Right -> FocusDirection.Right
+    NuvioNavKey.Up -> FocusDirection.Up
+    NuvioNavKey.Down -> FocusDirection.Down
 }
 
 private fun Component?.isArrowKeyConsumer(): Boolean = when (this) {

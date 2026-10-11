@@ -72,6 +72,8 @@ import com.nuvio.app.core.ui.NuvioNavBarScrollState
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.SettingsFocusLinks
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.CorridorOrientation
+import com.nuvio.app.core.ui.corridorEdges
 import com.nuvio.app.core.ui.nuvioDebugFocusTag
 import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.features.cloud.CloudLibraryContentType
@@ -745,6 +747,14 @@ internal fun DesktopHoverSidebar(
     SettingsFocusLinks.railEntries[AppScreenTab.Search] = searchFocusRequester
     SettingsFocusLinks.railEntries[AppScreenTab.Library] = libraryFocusRequester
     SettingsFocusLinks.railEntries[AppScreenTab.Settings] = settingsFocusRequester
+    // cwrneirOS consolidation: declarative rail corridor (see corridorEdges).
+    val railRequesters = listOf(
+        avatarFocusRequester,
+        homeFocusRequester,
+        searchFocusRequester,
+        libraryFocusRequester,
+        settingsFocusRequester,
+    )
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val profileState by ProfileRepository.state.collectAsStateWithLifecycle()
     val avatars by AvatarRepository.avatars.collectAsStateWithLifecycle()
@@ -802,18 +812,23 @@ internal fun DesktopHoverSidebar(
                     .padding(horizontal = 6.dp, vertical = 4.dp)
                     .nuvioFocusBorder(RoundedCornerShape(16.dp))
                     .focusRequester(avatarFocusRequester)
-                    .focusProperties {
-                        // Corridor top end. While the profile switcher stack is
-                        // visible, Down keeps the default geometric edge into it.
-                        up = FocusRequester.Cancel
-                        down = if (profileStackVisible) FocusRequester.Default else homeFocusRequester
-                        // cwrneirOS round 4b: Right on the Settings tab goes to the
-                        // active category (a geometric jump into the top bar left
-                        // the ring invisible).
-                        if (selectedTab == AppScreenTab.Settings) {
-                            SettingsFocusLinks.categoryEntry?.let { right = it }
-                        }
-                    }
+                    .focusProperties(
+                        // Corridor top end (up = Cancel). While the profile switcher
+                        // stack is visible, Down keeps the default geometric edge into it.
+                        corridorEdges(
+                            orientation = CorridorOrientation.Vertical,
+                            requesters = railRequesters,
+                            index = 0,
+                        ) {
+                            if (profileStackVisible) down = FocusRequester.Default
+                            // cwrneirOS round 4b: Right on the Settings tab goes to the
+                            // active category (a geometric jump into the top bar left
+                            // the ring invisible).
+                            if (selectedTab == AppScreenTab.Settings) {
+                                SettingsFocusLinks.categoryEntry?.let { right = it }
+                            }
+                        },
+                    )
                     .nuvioDebugFocusTag("rail-avatar")
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
@@ -858,18 +873,22 @@ internal fun DesktopHoverSidebar(
                     onClick = { selectTab(AppScreenTab.Home) },
                     modifier = Modifier
                         .focusRequester(homeFocusRequester)
-                        .focusProperties {
-                            up = avatarFocusRequester
-                            down = searchFocusRequester
-                            if (selectedTab == AppScreenTab.Settings) {
-                                SettingsFocusLinks.categoryEntry?.let { right = it }
-                                // cwrneirOS round 4c: while Settings is open the rail
-                                // items are non-candidates for 2D search (every
-                                // Settings-tab rail edge is explicit), so Down at the
-                                // bottom of the content pane cannot leak onto the rail.
-                                focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
-                            }
-                        }
+                        .focusProperties(
+                            corridorEdges(
+                                orientation = CorridorOrientation.Vertical,
+                                requesters = railRequesters,
+                                index = 1,
+                            ) {
+                                if (selectedTab == AppScreenTab.Settings) {
+                                    SettingsFocusLinks.categoryEntry?.let { right = it }
+                                    // cwrneirOS round 4c: while Settings is open the rail
+                                    // items are non-candidates for 2D search (every
+                                    // Settings-tab rail edge is explicit), so Down at the
+                                    // bottom of the content pane cannot leak onto the rail.
+                                    focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
+                                }
+                            },
+                        )
                         .nuvioDebugFocusTag("rail-home"),
                 ) { color ->
                     Icon(
@@ -886,16 +905,20 @@ internal fun DesktopHoverSidebar(
                     onClick = { selectTab(AppScreenTab.Search) },
                     modifier = Modifier
                         .focusRequester(searchFocusRequester)
-                        .focusProperties {
-                            up = homeFocusRequester
-                            down = libraryFocusRequester
-                            if (selectedTab == AppScreenTab.Settings) {
-                                SettingsFocusLinks.categoryEntry?.let { right = it }
-                                // cwrneirOS round 4c: non-candidate while Settings is
-                                // open (see rail-home).
-                                focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
-                            }
-                        }
+                        .focusProperties(
+                            corridorEdges(
+                                orientation = CorridorOrientation.Vertical,
+                                requesters = railRequesters,
+                                index = 2,
+                            ) {
+                                if (selectedTab == AppScreenTab.Settings) {
+                                    SettingsFocusLinks.categoryEntry?.let { right = it }
+                                    // cwrneirOS round 4c: non-candidate while Settings is
+                                    // open (see rail-home).
+                                    focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
+                                }
+                            },
+                        )
                         .nuvioDebugFocusTag("rail-search"),
                 ) { color ->
                     Icon(
@@ -912,16 +935,20 @@ internal fun DesktopHoverSidebar(
                     onClick = { selectTab(AppScreenTab.Library) },
                     modifier = Modifier
                         .focusRequester(libraryFocusRequester)
-                        .focusProperties {
-                            up = searchFocusRequester
-                            down = settingsFocusRequester
-                            if (selectedTab == AppScreenTab.Settings) {
-                                SettingsFocusLinks.categoryEntry?.let { right = it }
-                                // cwrneirOS round 4c: non-candidate while Settings is
-                                // open (see rail-home).
-                                focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
-                            }
-                        }
+                        .focusProperties(
+                            corridorEdges(
+                                orientation = CorridorOrientation.Vertical,
+                                requesters = railRequesters,
+                                index = 3,
+                            ) {
+                                if (selectedTab == AppScreenTab.Settings) {
+                                    SettingsFocusLinks.categoryEntry?.let { right = it }
+                                    // cwrneirOS round 4c: non-candidate while Settings is
+                                    // open (see rail-home).
+                                    focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
+                                }
+                            },
+                        )
                         .nuvioDebugFocusTag("rail-library"),
                 ) { color ->
                     Icon(
@@ -938,16 +965,20 @@ internal fun DesktopHoverSidebar(
                     onClick = { selectTab(AppScreenTab.Settings) },
                     modifier = Modifier
                         .focusRequester(settingsFocusRequester)
-                        .focusProperties {
-                            up = libraryFocusRequester
-                            down = FocusRequester.Cancel
-                            if (selectedTab == AppScreenTab.Settings) {
-                                SettingsFocusLinks.categoryEntry?.let { right = it }
-                                // cwrneirOS round 4c: non-candidate while Settings is
-                                // open (see rail-home).
-                                focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
-                            }
-                        }
+                        .focusProperties(
+                            corridorEdges(
+                                orientation = CorridorOrientation.Vertical,
+                                requesters = railRequesters,
+                                index = 4,
+                            ) {
+                                if (selectedTab == AppScreenTab.Settings) {
+                                    SettingsFocusLinks.categoryEntry?.let { right = it }
+                                    // cwrneirOS round 4c: non-candidate while Settings is
+                                    // open (see rail-home).
+                                    focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
+                                }
+                            },
+                        )
                         .nuvioDebugFocusTag("rail-settings"),
                 ) { color ->
                     Icon(

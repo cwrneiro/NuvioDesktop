@@ -1,6 +1,7 @@
 package com.nuvio.app.focuscontract
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -125,5 +126,40 @@ class FocusContractTest {
         compose.onNodeWithTag("content-row-$focusedRow")
             .assert(ringed)
             .assert(hasClickAction())
+    }
+
+    @Test
+    fun railCorridorWalkKeepsEveryStopRingedAndActionable() {
+        lateinit var focusManager: FocusManager
+
+        compose.setContent {
+            NuvioTheme {
+                focusManager = LocalFocusManager.current
+                Box(Modifier.fillMaxSize()) {
+                    DesktopHoverSidebar(
+                        selectedTab = AppScreenTab.Home,
+                        onTabSelected = {},
+                        onProfileSelected = {},
+                        onAddProfileRequested = {},
+                        sidebarWidth = 68.dp,
+                    )
+                }
+            }
+        }
+
+        compose.waitForIdle()
+        val homeRequester = SettingsFocusLinks.railEntries[AppScreenTab.Home]
+        requireNotNull(homeRequester) { "rail home requester was not registered" }
+        compose.runOnIdle { homeRequester.requestFocus() }
+        compose.waitForIdle()
+
+        // Every stop reached by walking the corridor Down must be ringed and
+        // actionable (no ringless/decoration dead-ends in the focus order).
+        repeat(3) {
+            compose.onNode(isFocused() and ringed and hasClickAction()).assertExists()
+            compose.runOnIdle { focusManager.moveFocus(FocusDirection.Down) }
+            compose.waitForIdle()
+        }
+        compose.onNode(isFocused() and ringed and hasClickAction()).assertExists()
     }
 }

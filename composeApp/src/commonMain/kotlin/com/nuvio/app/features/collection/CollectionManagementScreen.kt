@@ -58,6 +58,7 @@ import com.nuvio.app.core.ui.NuvioScreenHeader
 import com.nuvio.app.core.ui.NuvioSectionLabel
 import com.nuvio.app.core.ui.NuvioStatusModal
 import com.nuvio.app.core.ui.NuvioSurfaceCard
+import com.nuvio.app.core.ui.nuvioTracksTextInput
 import com.nuvio.app.core.ui.withDuplicateSafeLazyKeys
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -379,7 +380,8 @@ private fun ImportDialog(
             onValueChange = onTextChange,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(160.dp),
+                .height(160.dp)
+                .nuvioTracksTextInput(),
             placeholder = {
                 Text(
                     stringResource(Res.string.collections_import_json_placeholder),

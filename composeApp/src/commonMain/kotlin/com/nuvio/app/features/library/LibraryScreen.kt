@@ -71,6 +71,7 @@ import com.nuvio.app.core.ui.NuvioViewAllPillSize
 import com.nuvio.app.core.ui.ScopedDisintegrationTracker
 import com.nuvio.app.core.ui.SkeletonBlock
 import com.nuvio.app.core.ui.nuvioConsumePointerEvents
+import com.nuvio.app.core.ui.nuvioTracksTextInput
 import com.nuvio.app.core.ui.posterGridColumnCountForViewport
 import com.nuvio.app.features.home.components.posterGridColumnCountForWidth
 import com.nuvio.app.isDesktop
@@ -659,7 +660,7 @@ private fun CloudLibrarySearchField(
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().nuvioTracksTextInput(),
         singleLine = true,
         shape = RoundedCornerShape(12.dp),
         placeholder = { Text(stringResource(Res.string.cloud_library_search_label)) },

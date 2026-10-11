@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioTracksTextInput
 import com.nuvio.app.features.tracking.LibraryListPrivacy
 import com.nuvio.app.features.tracking.TrackingListManagementCapabilities
 import nuvio.composeapp.generated.resources.*
@@ -61,7 +62,7 @@ internal fun LibraryListEditor(
             label = { Text(stringResource(Res.string.library_list_name)) },
             singleLine = true,
             enabled = !state.isPending,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(),
             shape = tokens.shapes.compactCard,
             colors = inputColors,
             keyboardOptions = KeyboardOptions(imeAction = if (capabilities.supportsDescription) ImeAction.Next else ImeAction.Done),
@@ -73,7 +74,7 @@ internal fun LibraryListEditor(
                 onValueChange = onDescriptionChange,
                 label = { Text(stringResource(Res.string.library_list_description)) },
                 enabled = !state.isPending,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(),
                 shape = tokens.shapes.compactCard,
                 colors = inputColors,
                 minLines = 2,

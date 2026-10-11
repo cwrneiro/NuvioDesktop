@@ -82,6 +82,7 @@ internal fun StreamCard(
                 ambientColor = Color.Black.copy(alpha = 0.04f),
                 spotColor = Color.Black.copy(alpha = 0.04f),
             )
+            .nuvioFocusBorder(cardShape)
             .clip(cardShape)
             .background(
                 if (isCurrent) {
@@ -101,7 +102,6 @@ internal fun StreamCard(
                     Modifier
                 },
             )
-            .nuvioFocusBorder(cardShape)
             .then(
                 if (isDesktop) {
                     Modifier.onGloballyPositioned { coordinates ->

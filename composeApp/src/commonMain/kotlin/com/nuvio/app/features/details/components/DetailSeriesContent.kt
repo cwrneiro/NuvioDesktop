@@ -529,6 +529,7 @@ private fun SeasonTextChipScrollRow(
             val chipShape = RoundedCornerShape(sizing.seasonChipRadius)
             Box(
                 modifier = Modifier
+                    .nuvioFocusBorder(chipShape)
                     .clip(chipShape)
                     .background(
                         if (isSelected) {
@@ -537,7 +538,6 @@ private fun SeasonTextChipScrollRow(
                             Color.Transparent
                         },
                     )
-                    .nuvioFocusBorder(chipShape)
                     .combinedClickable(
                         onClick = { onSelect(season) },
                         onLongClick = onSecondaryClick,
@@ -825,6 +825,7 @@ private fun EpisodeHorizontalCard(
         modifier = Modifier
             .width(metrics.cardWidth)
             .height(metrics.cardHeight)
+            .nuvioFocusBorder(cardShape)
             .clip(cardShape)
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
             .nuvioCardDepth(
@@ -832,7 +833,6 @@ private fun EpisodeHorizontalCard(
                 surface = NuvioCardDepthSurface.EpisodeCards,
                 fallbackBorderAlpha = 0.12f,
             )
-            .nuvioFocusBorder(cardShape)
             .posterCardClickable(
                 onClick = onClick,
                 onLongClick = onLongPress,
@@ -1203,6 +1203,7 @@ private fun EpisodeListCard(
         modifier = modifier
             .fillMaxWidth()
             .height(sizing.cardHeight)
+            .nuvioFocusBorder(cardShape)
             .clip(cardShape)
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
             .border(
@@ -1210,7 +1211,6 @@ private fun EpisodeListCard(
                 color = Color.White.copy(alpha = 0.1f),
                 shape = cardShape,
             )
-            .nuvioFocusBorder(cardShape)
             .combinedClickable(
                 enabled = onClick != null || onLongPress != null,
                 onClick = { onClick?.invoke() },

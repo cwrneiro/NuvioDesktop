@@ -133,9 +133,9 @@ private fun FilterChip(
                 scaleY = scale
             }
             .height(36.dp)
+            .nuvioFocusBorder(chipShape)
             .clip(chipShape)
             .background(containerColor)
-            .nuvioFocusBorder(chipShape)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,

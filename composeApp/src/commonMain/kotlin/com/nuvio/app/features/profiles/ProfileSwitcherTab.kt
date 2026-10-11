@@ -87,6 +87,7 @@ import dev.chrisbanes.haze.hazeEffect
 import com.nuvio.app.core.ui.NuvioAsyncImage as AsyncImage
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import dev.chrisbanes.haze.HazeState
 import com.nuvio.app.isIos
 import kotlinx.coroutines.delay
@@ -416,6 +417,7 @@ private fun SidebarProfileSwitcherRow(
         modifier = Modifier
             .fillMaxWidth()
             .height(40.dp)
+            .nuvioFocusBorder(tokens.shapes.compactCard)
             .clip(tokens.shapes.compactCard)
             .background(
                 if (isActive) {
@@ -471,6 +473,7 @@ private fun SidebarAddProfileRow(
         modifier = Modifier
             .fillMaxWidth()
             .height(40.dp)
+            .nuvioFocusBorder(tokens.shapes.compactCard)
             .clip(tokens.shapes.compactCard)
             .clickable(onClick = onClick)
             .padding(horizontal = 8.dp),

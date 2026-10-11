@@ -288,8 +288,11 @@ internal fun MainAppContent(
         }
         // Focus recovery: when nothing in the main scene holds focus (e.g. after
         // navigating into a subpage clears it), park focus on the off-screen root
-        // anchor so hardware Esc/B keeps working. The anchor's far focusRect keeps
-        // it out of every 2D search, so normal navigation is unaffected.
+        // anchor so hardware Esc/B keeps working. The anchor's NaN focusRect
+        // makes isCandidate() false for every direction, so no 2D arrow search
+        // can ever land here (a far, even non-empty, rect still participates as
+        // a candidate — the round-3 far-rect guard was ineffective); normal
+        // navigation is unaffected.
         val anyFocus = PlatformFocusPresence.hasFocus
         LaunchedEffect(anyFocus) {
             if (!anyFocus) rootFocusAnchor.requestFocus()
@@ -2125,7 +2128,12 @@ internal fun MainAppContent(
             Box(
                 Modifier
                     .size(0.dp)
-                    .focusProperties { focusRect = Rect(10_000f, 10_000f, 10_000f, 10_000f) }
+                    // cwrneirOS round 4: NaN rect → never a 2D search candidate
+                    // in any direction, so no arrow move can ever land on this
+                    // invisible node. The node stays placeable and programmatically
+                    // focusable for the Esc/B parking path; the AWT dispatcher's
+                    // clear-and-retry recovers to a visible node on the next move.
+                    .focusProperties { focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN) }
                     .onFocusChanged { PlatformFocusPresence.anchorActive = it.isFocused }
                     .focusRequester(rootFocusAnchor)
                     .focusable(),

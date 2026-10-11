@@ -53,7 +53,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -729,6 +731,12 @@ internal fun DesktopHoverSidebar(
     modifier: Modifier = Modifier,
 ) {
     val tokens = MaterialTheme.nuvio
+    // cwrneirOS round 4: explicit rail-corridor requesters (wired via focusProperties below).
+    val avatarFocusRequester = remember { FocusRequester() }
+    val homeFocusRequester = remember { FocusRequester() }
+    val searchFocusRequester = remember { FocusRequester() }
+    val libraryFocusRequester = remember { FocusRequester() }
+    val settingsFocusRequester = remember { FocusRequester() }
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val profileState by ProfileRepository.state.collectAsStateWithLifecycle()
     val avatars by AvatarRepository.avatars.collectAsStateWithLifecycle()
@@ -785,6 +793,13 @@ internal fun DesktopHoverSidebar(
                     .height(DesktopSidebarItemHeight)
                     .padding(horizontal = 6.dp, vertical = 4.dp)
                     .nuvioFocusBorder(RoundedCornerShape(16.dp))
+                    .focusRequester(avatarFocusRequester)
+                    .focusProperties {
+                        // Corridor top end. While the profile switcher stack is
+                        // visible, Down keeps the default geometric edge into it.
+                        up = FocusRequester.Cancel
+                        down = if (profileStackVisible) FocusRequester.Default else homeFocusRequester
+                    }
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -825,6 +840,15 @@ internal fun DesktopHoverSidebar(
                     selected = selectedTab == AppScreenTab.Home,
                     expanded = sidebarExpanded,
                     onClick = { selectTab(AppScreenTab.Home) },
+                    modifier = Modifier
+                        .focusRequester(homeFocusRequester)
+                        .focusProperties {
+                            up = avatarFocusRequester
+                            down = searchFocusRequester
+                            if (selectedTab == AppScreenTab.Settings) {
+                                SettingsFocusLinks.categoryEntry?.let { right = it }
+                            }
+                        },
                 ) { color ->
                     Icon(
                         imageVector = Icons.Filled.Home,
@@ -838,6 +862,15 @@ internal fun DesktopHoverSidebar(
                     selected = selectedTab == AppScreenTab.Search,
                     expanded = sidebarExpanded,
                     onClick = { selectTab(AppScreenTab.Search) },
+                    modifier = Modifier
+                        .focusRequester(searchFocusRequester)
+                        .focusProperties {
+                            up = homeFocusRequester
+                            down = libraryFocusRequester
+                            if (selectedTab == AppScreenTab.Settings) {
+                                SettingsFocusLinks.categoryEntry?.let { right = it }
+                            }
+                        },
                 ) { color ->
                     Icon(
                         painter = painterResource(Res.drawable.sidebar_search),
@@ -851,6 +884,15 @@ internal fun DesktopHoverSidebar(
                     selected = selectedTab == AppScreenTab.Library,
                     expanded = sidebarExpanded,
                     onClick = { selectTab(AppScreenTab.Library) },
+                    modifier = Modifier
+                        .focusRequester(libraryFocusRequester)
+                        .focusProperties {
+                            up = searchFocusRequester
+                            down = settingsFocusRequester
+                            if (selectedTab == AppScreenTab.Settings) {
+                                SettingsFocusLinks.categoryEntry?.let { right = it }
+                            }
+                        },
                 ) { color ->
                     Icon(
                         painter = painterResource(Res.drawable.sidebar_library),
@@ -864,11 +906,15 @@ internal fun DesktopHoverSidebar(
                     selected = selectedTab == AppScreenTab.Settings,
                     expanded = sidebarExpanded,
                     onClick = { selectTab(AppScreenTab.Settings) },
-                    modifier = Modifier.focusProperties {
-                        if (selectedTab == AppScreenTab.Settings) {
-                            SettingsFocusLinks.categoryEntry?.let { right = it }
-                        }
-                    },
+                    modifier = Modifier
+                        .focusRequester(settingsFocusRequester)
+                        .focusProperties {
+                            up = libraryFocusRequester
+                            down = FocusRequester.Cancel
+                            if (selectedTab == AppScreenTab.Settings) {
+                                SettingsFocusLinks.categoryEntry?.let { right = it }
+                            }
+                        },
                 ) { color ->
                     Icon(
                         imageVector = Icons.Rounded.Settings,

@@ -45,7 +45,6 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.focusProperties
@@ -120,6 +119,7 @@ import org.jetbrains.compose.resources.stringResource
 private val SettingsSearchRevealThreshold = 28.dp
 private const val SettingsSearchRevealAnimationMillis = 240L
 private const val SettingsSearchRevealHapticDelayMillis = 90L
+private const val SettingsContentFocusRetryFrames = 8
 
 private fun SettingsPage.isEnabledByPolicy(): Boolean =
     when (this) {
@@ -968,12 +968,17 @@ private fun TabletSettingsScreen(
 
     DisposableEffect(Unit) {
         SettingsFocusLinks.categoryEntry = categoryEntryRequester
-        SettingsFocusLinks.contentEntry = contentEntryRequester
         onDispose {
             if (SettingsFocusLinks.categoryEntry === categoryEntryRequester) SettingsFocusLinks.categoryEntry = null
             if (SettingsFocusLinks.contentEntry === contentEntryRequester) SettingsFocusLinks.contentEntry = null
+            if (SettingsFocusLinks.contentEntry === backRequester) SettingsFocusLinks.contentEntry = null
         }
     }
+    // cwrneirOS round 4: contentEntry must be a concrete attached node —
+    // the subpage header back button, or the first ringed content row on Root.
+    // A focus-group Box target could fail the redirect and fall through to the
+    // recovery anchor; a concrete node is focused directly.
+    SettingsFocusLinks.contentEntry = if (page == SettingsPage.Root) contentEntryRequester else backRequester
 
     LaunchedEffect(page) {
         if (page.opensInlineOnTablet) {
@@ -986,13 +991,21 @@ private fun TabletSettingsScreen(
         val from = lastPage
         lastPage = page
         if (page == from) return@LaunchedEffect
-        withFrameNanos { }
         val internalBackAvailable = showInternalHeader &&
             !(useNativeNavigation && !nativeNavigationBarHidden)
         if (page != SettingsPage.Root && internalBackAvailable) {
-            backRequester.requestFocus()
+            // cwrneirOS round 4: the header back button may not be attached yet
+            // on the first frames after the page swap; keep requesting until the
+            // request sticks so the ring appears immediately (and B has a target).
+            repeat(SettingsContentFocusRetryFrames) {
+                withFrameNanos { }
+                if (backRequester.requestFocus()) return@LaunchedEffect
+            }
         } else {
-            SettingsFocusLinks.categoryEntry?.requestFocus()
+            repeat(SettingsContentFocusRetryFrames) {
+                withFrameNanos { }
+                if (SettingsFocusLinks.categoryEntry?.requestFocus() == true) return@LaunchedEffect
+            }
         }
     }
 
@@ -1042,8 +1055,10 @@ private fun TabletSettingsScreen(
                                 }
                             }
                             focusRequestScope.launch {
-                                withFrameNanos { }
-                                SettingsFocusLinks.contentEntry?.requestFocus(FocusDirection.Down)
+                                repeat(SettingsContentFocusRetryFrames) {
+                                    withFrameNanos { }
+                                    if (SettingsFocusLinks.contentEntry?.requestFocus() == true) return@launch
+                                }
                             }
                         },
                         modifier = Modifier
@@ -1137,7 +1152,6 @@ private fun TabletSettingsScreen(
                         .widthIn(max = if (isDesktop) 800.dp else Dp.Unspecified)
                         .fillMaxWidth()
                         .weight(1f)
-                        .focusRequester(contentEntryRequester)
                         .focusGroup(),
                 ) {
                     LazyColumn(
@@ -1186,6 +1200,7 @@ private fun TabletSettingsScreen(
                                 if (settingsSearchQuery.isBlank()) {
                                     settingsRootContent(
                                         isTablet = true,
+                                        firstRowModifier = Modifier.focusRequester(contentEntryRequester),
                                         onPlaybackClick = { openInlinePage(SettingsPage.Playback) },
                                         onAppearanceClick = { openInlinePage(SettingsPage.Appearance) },
                                         onAdvancedClick = { openInlinePage(SettingsPage.Advanced) },

@@ -253,6 +253,7 @@ internal fun SettingsNavigationRow(
     iconPainter: Painter? = null,
     enabled: Boolean = true,
     isTablet: Boolean,
+    modifier: Modifier = Modifier,
     trailingContent: (@Composable RowScope.() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
@@ -262,7 +263,7 @@ internal fun SettingsNavigationRow(
     val horizontalPadding = if (isTablet) 20.dp else 16.dp
 
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4))
             .clickable(enabled = enabled, onClick = onClick)

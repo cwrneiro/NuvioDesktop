@@ -159,7 +159,8 @@ internal fun TabletPageHeader(
                                 Modifier
                             },
                         )
-                        .nuvioDebugFocusTag("back-button"),
+                        .nuvioDebugFocusTag("back-button")
+                        .focusProperties { SettingsFocusLinks.categoryEntry?.let { left = it } },
                     shape = tokens.shapes.compactCard,
                     containerColor = tokens.colors.surface,
                     contentColor = tokens.colors.textPrimary,

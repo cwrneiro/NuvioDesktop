@@ -1,6 +1,7 @@
 package com.nuvio.app.features.catalog
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -34,9 +35,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
@@ -119,11 +123,20 @@ fun CatalogScreen(
     )
     var headerHeightPx by remember { mutableIntStateOf(0) }
     var observedOfflineState by remember { mutableStateOf(false) }
+    val gridFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(target, homeCatalogSettingsUiState.hideUnreleasedContent) {
         CatalogRepository.load(
             target = target,
         )
+    }
+
+    LaunchedEffect(uiState.items.isNotEmpty()) {
+        if (uiState.items.isEmpty()) return@LaunchedEffect
+        repeat(8) {
+            withFrameNanos { }
+            if (gridFocusRequester.requestFocus()) return@LaunchedEffect
+        }
     }
 
     LaunchedEffect(gridState, target, homeCatalogSettingsUiState.hideUnreleasedContent) {
@@ -204,7 +217,12 @@ fun CatalogScreen(
             GridCells.Fixed(columns)
         }
 
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .focusGroup()
+                .focusRequester(gridFocusRequester),
+        ) {
             LazyVerticalGrid(
                 columns = gridCells,
                 state = gridState,

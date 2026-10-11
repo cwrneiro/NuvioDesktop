@@ -7,7 +7,7 @@
 Last updated: 2026-10-09 (session 13 continued: couch-driven focus iterations +
 autonomous headless focus-contract harness). The focus-navigation work is tracked
 in
-[docs/plans/nuvio-focus-consolidation.md](docs/plans/nuvio-focus-consolidation.md)
+[docs/plans/nuvio-focus-consolidation.md](plans/nuvio-focus-consolidation.md)
 (implementation log + fresh-session resume point). **Deployed through the 16th
 patch `nuvio-focus-ef-fixes.patch`** (package `k9c0zhw1…`, generation
 `zb2mbjgv…`, 2026-10-09). The 15th patch
@@ -26,7 +26,7 @@ subpage entry and cancels the Root Up leak (10th patch
 see STATE addendum 7. Retest 7 is the gate. Session 12: source build + nav
 fixes. Session 11: AppImage wrap + AWT focus fix. Session 10: planning
 alignment — V1/V2/V3 scope and the development-flow agreement are canonical
-in [ROADMAP.md](ROADMAP.md).)
+in `ROADMAP.md` (cwrneirOS).)
 
 [STATE lines 39–79 — Session-11 outcome: Nuvio wrap/focus verified, controller UX re-opened:]
 
@@ -104,7 +104,7 @@ navigation); chose the patched source build. What happened:
   focusable and auto-bringIntoView (lazy shelves scroll for free); Enter
   activates on key-up; rings must observe `hasFocus`, not `isFocused`.
 - **Plan agreed (no coding yet):**
-  [docs/plans/nuvio-controller-navigation.md](docs/plans/nuvio-controller-navigation.md)
+  [docs/plans/nuvio-controller-navigation.md](plans/nuvio-controller-navigation.md)
   — outset `hasFocus` ring + desktop-surface coverage, adopt PR #791 for
   back, text-input arrow tracker, probes, verification and the upstream-PR
   plan. The scratch tree is regenerable from the repo patches
@@ -114,7 +114,7 @@ navigation); chose the patched source build. What happened:
 
 ## Session-13 outcome (2026-10-06): controller-navigation round 2 — implemented, built, deployed; couch pass pending
 
-Implemented [docs/plans/nuvio-controller-navigation.md](docs/plans/nuvio-controller-navigation.md)
+Implemented [docs/plans/nuvio-controller-navigation.md](plans/nuvio-controller-navigation.md)
 work items 1–3 as three per-topic patches in `packages/nuvio-src/` (applied
 after the two existing ones; per-patch fidelity and combined apply verified
 on a fresh 0.1.27 extract):
@@ -286,14 +286,14 @@ vertical band under geometric arrow navigation.
 User decisions (2026-10-06): Right from ANY rail nav item on the Settings
 tab enters the categories column; the round-4 plan is documented and
 implementation proceeds in a fresh session. Plan:
-[docs/plans/nuvio-focus-graph-round4.md](docs/plans/nuvio-focus-graph-round4.md)
+[docs/plans/nuvio-focus-graph-round4.md](plans/nuvio-focus-graph-round4.md)
 (anchor isolation/visible parking, rail corridor edges, category→content
 target, subpage back-button focus, keep diagnostics; 8th patch
 `nuvio-focus-round4.patch`).
 
 ### Session-13 addendum 4 (2026-10-06, round-4 focus graph): implemented, built, deployed
 
-Implemented [docs/plans/nuvio-focus-graph-round4.md](docs/plans/nuvio-focus-graph-round4.md)
+Implemented [docs/plans/nuvio-focus-graph-round4.md](plans/nuvio-focus-graph-round4.md)
 as the 8th patch `nuvio-focus-round4.patch` (5 files in `packages/nuvio-src/`;
 `git apply --check` against the round-3 state + chain fidelity on a fresh
 0.1.27 extract, patches 1–8):
@@ -509,7 +509,7 @@ at the next rebase. NuvioTV/NuvioWeb already own explicit focus stacks
 (2026-10-07) and is the future blessed back API.
 
 **Decision / next.** New plan
-[docs/plans/nuvio-focus-consolidation.md](docs/plans/nuvio-focus-consolidation.md).
+[docs/plans/nuvio-focus-consolidation.md](plans/nuvio-focus-consolidation.md).
 **P0 implemented later the same session (11th patch `nuvio-focus-p0.patch`,
 chain-fidelity verified, built on brook `aq7blsw…` and switched gen `m1gry23…`;
 couch pass pending):** `resolveArrowKey` extracted
@@ -647,7 +647,7 @@ no reboot). **E/F couch-verified PASS; regression PASS.** Keep brook on AC power
 (battery failing).
 
 **Session closeout / fresh-session entry point:**
-[docs/plans/nuvio-focus-consolidation.md](docs/plans/nuvio-focus-consolidation.md)
+[docs/plans/nuvio-focus-consolidation.md](plans/nuvio-focus-consolidation.md)
 §Resume point (deployed state, first actions, harness recipe, patch chain,
 residual gaps). Next: P2 (`FocusableSurface`, scoped focus state), patch-chain
 consolidation, upstream PRs.
@@ -656,12 +656,12 @@ consolidation, upstream PRs.
 
 ## Roadmap & next points (s10, 2026-10-05)
 
-Scope stages and the working agreement live in [ROADMAP.md](ROADMAP.md).
+Scope stages and the working agreement live in `ROADMAP.md` (cwrneirOS).
 V1 queue (order may adjust as findings land):
 
 1. Nuvio controller navigation (V1.2 open): the focus/navigation work now lives
    in
-   [docs/plans/nuvio-focus-consolidation.md](docs/plans/nuvio-focus-consolidation.md)
+   [docs/plans/nuvio-focus-consolidation.md](plans/nuvio-focus-consolidation.md)
    (implementation log + §Resume point). Deployed through the 15th patch
    (`nuvio-focus-behavior-fixes.patch`, 2026-10-09, generation `azs7cmg…`);
    the 16th (`nuvio-focus-ef-fixes.patch`) is installed/chain-verified but

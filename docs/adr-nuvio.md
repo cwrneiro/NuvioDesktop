@@ -341,7 +341,7 @@ couch retests was reviewed. No code changed. Conclusions:
   acknowledged blocker; seed-focus once visible parking lands); do **not**
   upstream the NaN anchor.
 
-Plan: [docs/plans/nuvio-focus-consolidation.md](../plans/nuvio-focus-consolidation.md).
+Plan: [docs/plans/nuvio-focus-consolidation.md](plans/nuvio-focus-consolidation.md).
 It supersedes the "Residuals" list above where it names rail/top-bar/trigger
 rings and in-app back (resolved by rounds 2–4d); the remaining residuals
 (text-field caret edge cases, player transport, popup focus, deep-flow ringless
@@ -443,4 +443,4 @@ the rail avatar; an explicit `left = categoryEntry` was added on the
 frames when items load, so focus enters the first tile. Chain-fidelity verified;
 built `k9c0zhw1…`, deployed generation `zb2mbjgv…`; **E/F couch-verified PASS**,
 regression PASS. Session closeout and a fresh-session resume point are in
-[docs/plans/nuvio-focus-consolidation.md](../plans/nuvio-focus-consolidation.md).
+[docs/plans/nuvio-focus-consolidation.md](plans/nuvio-focus-consolidation.md).

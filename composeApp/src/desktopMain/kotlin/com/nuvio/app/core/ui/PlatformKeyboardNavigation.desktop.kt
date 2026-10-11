@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
+import com.nuvio.app.core.ui.PlatformFocusPresence
 import java.awt.Component
 import java.awt.Container
 import java.awt.KeyEventDispatcher
@@ -23,22 +24,44 @@ actual fun PlatformKeyboardNavigation() {
 
     DisposableEffect(Unit) {
         val dispatcher = KeyEventDispatcher { event: KeyEvent ->
-            // Compose text fields are not AWT components, so isArrowKeyConsumer()
-            // cannot see them; while one holds focus, let Compose handle arrows
-            // (caret movement) instead of consuming them for focus traversal.
-            if (DesktopTextInputState.isActive) return@KeyEventDispatcher false
             if (event.id != KeyEvent.KEY_PRESSED) return@KeyEventDispatcher false
             if (KeyboardFocusManager.getCurrentKeyboardFocusManager()
                     .focusOwner.isArrowKeyConsumer()
             ) return@KeyEventDispatcher false
 
-            when (event.keyCode) {
-                KeyEvent.VK_LEFT -> focusManager.moveFocus(FocusDirection.Left)
-                KeyEvent.VK_RIGHT -> focusManager.moveFocus(FocusDirection.Right)
-                KeyEvent.VK_UP -> focusManager.moveFocus(FocusDirection.Up)
-                KeyEvent.VK_DOWN -> focusManager.moveFocus(FocusDirection.Down)
+            // Compose text fields are not AWT components, so isArrowKeyConsumer()
+            // cannot see them. Gate per key instead of blanket-passing arrows:
+            // Left/Right always belong to the caret while a field is focused,
+            // but Up/Down belong to the caret only in a multiline field; in a
+            // single-line field they move nothing and must still traverse focus.
+            val key = event.keyCode
+            when (key) {
+                KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT ->
+                    if (DesktopTextInputState.isActive) return@KeyEventDispatcher false
+                KeyEvent.VK_UP, KeyEvent.VK_DOWN ->
+                    if (DesktopTextInputState.isMultilineActive) return@KeyEventDispatcher false
+            }
+
+            val direction = when (key) {
+                KeyEvent.VK_LEFT -> FocusDirection.Left
+                KeyEvent.VK_RIGHT -> FocusDirection.Right
+                KeyEvent.VK_UP -> FocusDirection.Up
+                KeyEvent.VK_DOWN -> FocusDirection.Down
                 else -> return@KeyEventDispatcher false
             }
+            var moved = focusManager.moveFocus(direction)
+            if (!moved && PlatformFocusPresence.anchorActive) {
+                // The anchor's far focusRect makes normal 2D search fail while it
+                // is focused; clearing focus restores the usual root-anchored
+                // search for one retry.
+                focusManager.clearFocus(force = true)
+                moved = focusManager.moveFocus(direction)
+            }
+            println(
+                "nuvio-nav: key=$key moved=$moved text=${DesktopTextInputState.isActive} " +
+                    "ml=${DesktopTextInputState.isMultilineActive} focus=${PlatformFocusPresence.hasFocus} " +
+                    "anchor=${PlatformFocusPresence.anchorActive}",
+            )
             true
         }
         KeyboardFocusManager.getCurrentKeyboardFocusManager()

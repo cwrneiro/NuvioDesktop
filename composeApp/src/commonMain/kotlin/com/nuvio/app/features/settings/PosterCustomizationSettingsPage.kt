@@ -209,7 +209,7 @@ internal fun LazyListScope.posterCustomizationSettingsContent(
                     OutlinedTextField(
                         value = editingPattern,
                         onValueChange = { editingPattern = it },
-                        modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(),
+                        modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(singleLine = false),
                         placeholder = {
                             Text(
                                 text = stringResource(Res.string.settings_custom_poster_placeholder),

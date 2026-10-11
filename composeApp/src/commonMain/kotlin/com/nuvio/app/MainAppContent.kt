@@ -8,8 +8,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -36,6 +38,12 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -45,6 +53,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
@@ -79,11 +88,14 @@ import com.nuvio.app.core.ui.NuvioPosterZoomActionOverlay
 import com.nuvio.app.core.ui.NuvioStatusModal
 import com.nuvio.app.core.ui.NuvioToastController
 import com.nuvio.app.core.ui.NuvioToastHost
+import com.nuvio.app.core.ui.PlatformFocusPresence
+import com.nuvio.app.core.ui.PlatformTextInputState
 import com.nuvio.app.core.ui.PosterZoomAnchor
 import com.nuvio.app.core.ui.PosterZoomAnchorHolder
 import com.nuvio.app.core.ui.PosterZoomOverlayAction
 import com.nuvio.app.core.ui.PosterZoomOverlayExitAnimation
 import com.nuvio.app.core.ui.TrackingListPickerDialog
+import com.nuvio.app.core.ui.focusPresenceMonitor
 import com.nuvio.app.core.ui.isLiquidGlassNativeTabBarSupported
 import com.nuvio.app.core.ui.localizedContinueWatchingSubtitle
 import com.nuvio.app.core.ui.nuvio
@@ -243,6 +255,7 @@ internal fun MainAppContent(
         val appUpdaterController = rememberAppUpdaterController()
         val hapticFeedback = LocalHapticFeedback.current
         val focusManager = LocalFocusManager.current
+        val rootFocusAnchor = remember { FocusRequester() }
         val uriHandler = LocalUriHandler.current
         val coroutineScope = rememberCoroutineScope()
         var selectedTab by rememberSaveable(initialTab) { mutableStateOf(initialTab) }
@@ -272,6 +285,25 @@ internal fun MainAppContent(
         }
         DisposableEffect(posterNavigation) {
             onDispose { posterNavigation.clear() }
+        }
+        // Focus recovery: when nothing in the main scene holds focus (e.g. after
+        // navigating into a subpage clears it), park focus on the off-screen root
+        // anchor so hardware Esc/B keeps working. The anchor's NaN focusRect
+        // makes isCandidate() false for every direction, so no 2D arrow search
+        // can ever land here (a far, even non-empty, rect still participates as
+        // a candidate — the round-3 far-rect guard was ineffective); normal
+        // navigation is unaffected.
+        val anyFocus = PlatformFocusPresence.hasFocus
+        LaunchedEffect(anyFocus) {
+            if (!anyFocus) {
+                // cwrneirOS round 4b: give an in-flight transition focus request
+                // (e.g. the settings subpage back button) a frame to land, then
+                // park on the anchor only if focus is still nowhere. The old
+                // effect captured anyFocus=false and could take focus right back
+                // from the back button, leaving the subpage ring invisible.
+                withFrameNanos { }
+                if (!PlatformFocusPresence.hasFocus) rootFocusAnchor.requestFocus()
+            }
         }
         val liquidGlassNativeTabBarEnabled by remember {
             ThemeSettingsRepository.liquidGlassNativeTabBarEnabled
@@ -1249,12 +1281,22 @@ internal fun MainAppContent(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.nuvio.colors.background)
+                    .focusPresenceMonitor()
                     .onKeyEvent { event ->
                         if (event.type == KeyEventType.KeyDown && event.key == Key.Escape) {
-                            if (!PlatformBackDispatcher.dispatch()) {
-                                navController.popBackStack()
+                            if (PlatformTextInputState.isActive) {
+                                // Esc leaves a focused text field before it can
+                                // trigger back navigation.
+                                if (!focusManager.moveFocus(FocusDirection.Previous)) {
+                                    focusManager.clearFocus(force = true)
+                                }
+                                true
+                            } else {
+                                if (!PlatformBackDispatcher.dispatch()) {
+                                    navController.popBackStack()
+                                }
+                                true
                             }
-                            true
                         } else {
                             false
                         }
@@ -2090,6 +2132,21 @@ internal fun MainAppContent(
                     .align(Alignment.TopCenter)
                     .zIndex(20f),
             )
+
+            Box(
+                Modifier
+                    .size(0.dp)
+                    // cwrneirOS round 4: NaN rect → never a 2D search candidate
+                    // in any direction, so no arrow move can ever land on this
+                    // invisible node. The node stays placeable and programmatically
+                    // focusable for the Esc/B parking path; the AWT dispatcher's
+                    // clear-and-retry recovers to a visible node on the next move.
+                    .focusProperties { focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN) }
+                    .onFocusChanged { PlatformFocusPresence.anchorActive = it.isFocused }
+                    .focusRequester(rootFocusAnchor)
+                    .focusable(),
+            ) {
+            }
 
             }
         }

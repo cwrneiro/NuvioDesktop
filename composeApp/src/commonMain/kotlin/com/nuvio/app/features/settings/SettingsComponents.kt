@@ -39,6 +39,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -55,6 +58,7 @@ import com.nuvio.app.core.ui.NuvioBackButton
 import com.nuvio.app.core.ui.NuvioSectionLabel
 import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.core.ui.nuvioConsumePointerEvents
+import com.nuvio.app.core.ui.nuvioDebugFocusTag
 import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.nuvioTracksTextInput
 import com.nuvio.app.features.home.HomeCatalogSettingsItem
@@ -101,7 +105,13 @@ internal fun SettingsGroup(
         isTablet = isTablet,
         modifier = modifier,
     ) {
-        Column(content = content)
+        Column(
+            // nuvioFocusBorder rings inflate up to 4dp outside their row and the
+            // card Surface clips to its rounded shape; this 4dp breathing room
+            // keeps the first/last rows' top/bottom ring strokes inside the clip.
+            modifier = Modifier.padding(vertical = NuvioTokens.Space.s4),
+            content = content,
+        )
     }
 }
 
@@ -120,6 +130,7 @@ internal fun TabletPageHeader(
     title: String,
     showBack: Boolean,
     onBack: () -> Unit,
+    backFocusRequester: FocusRequester? = null,
 ) {
     val tokens = MaterialTheme.nuvio
     Box(
@@ -139,7 +150,15 @@ internal fun TabletPageHeader(
                 NuvioBackButton(
                     onClick = onBack,
                     modifier = Modifier
-                        .size(36.dp),
+                        .size(36.dp)
+                        .then(
+                            if (backFocusRequester != null) {
+                                Modifier.focusRequester(backFocusRequester)
+                            } else {
+                                Modifier
+                            },
+                        )
+                        .nuvioDebugFocusTag("back-button"),
                     shape = tokens.shapes.compactCard,
                     containerColor = tokens.colors.surface,
                     contentColor = tokens.colors.textPrimary,
@@ -163,6 +182,7 @@ internal fun SettingsSidebarItem(
     icon: ImageVector,
     selected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val tokens = MaterialTheme.nuvio
     val primary = tokens.colors.accent
@@ -172,7 +192,7 @@ internal fun SettingsSidebarItem(
 
     val sidebarItemShape = RoundedCornerShape(NuvioTokens.Space.s10)
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = tokens.spacing.listGap, vertical = NuvioTokens.Space.s2)
             .background(background, sidebarItemShape)
@@ -242,6 +262,7 @@ internal fun SettingsNavigationRow(
     iconPainter: Painter? = null,
     enabled: Boolean = true,
     isTablet: Boolean,
+    modifier: Modifier = Modifier,
     trailingContent: (@Composable RowScope.() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
@@ -251,11 +272,22 @@ internal fun SettingsNavigationRow(
     val horizontalPadding = if (isTablet) 20.dp else 16.dp
 
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
+            // nuvioFocusBorder draws outside the node (2.5dp outline inflation +
+            // 1.5dp half stroke = up to 4dp out). Inset the focusable box so the
+            // enclosing SettingsCard Surface(shape) clip cannot shave the
+            // left/right ring strokes; the row background is transparent.
+            .padding(horizontal = NuvioTokens.Space.s4)
             .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4))
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = horizontalPadding, vertical = verticalPadding)
+            // Reclaim the 4dp inset inside the content padding so text and
+            // trailing content keep their original absolute position
+            // (SettingsGroupDivider is pinned to that alignment).
+            .padding(
+                horizontal = horizontalPadding - NuvioTokens.Space.s4,
+                vertical = verticalPadding,
+            )
             .alpha(if (enabled) NuvioTokens.Opacity.visible else tokens.opacity.medium),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
@@ -334,9 +366,17 @@ internal fun SettingsSwitchRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            // Match SettingsNavigationRow: inset the focusable box 4dp before
+            // nuvioFocusBorder (the ring draws up to 4dp outside the node) so
+            // the enclosing SettingsCard clip cannot shave the left/right ring
+            // strokes; content padding drops by the same 4dp so nothing shifts.
+            .padding(horizontal = NuvioTokens.Space.s4)
             .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4))
             .clickable(enabled = enabled) { onCheckedChange(!checked) }
-            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
+            .padding(
+                horizontal = horizontalPadding - NuvioTokens.Space.s4,
+                vertical = verticalPadding,
+            ),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -366,7 +406,16 @@ internal fun SettingsSwitchRow(
             checked = checked,
             onCheckedChange = onCheckedChange,
             enabled = enabled,
-            modifier = Modifier.padding(start = 4.dp),
+            // Material3's Switch applies its own `toggleable`, which registers
+            // a separate focus target. D-pad focus therefore landed on the
+            // Switch instead of the row's clickable, and the row's focus ring
+            // went missing. Suppress the Switch's focus target so the row is a
+            // single focus stop; touch and the row's A/Enter clickable still
+            // toggle it, and a disabled row stays non-focusable (both the
+            // disabled clickable and this Switch opt out).
+            modifier = Modifier
+                .padding(start = 4.dp)
+                .focusProperties { canFocus = false },
             colors = SwitchDefaults.colors(
                 checkedThumbColor = tokens.colors.onAccent,
                 checkedTrackColor = tokens.colors.accent,

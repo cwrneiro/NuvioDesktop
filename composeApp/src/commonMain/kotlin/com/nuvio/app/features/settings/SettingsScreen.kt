@@ -33,6 +33,7 @@ import androidx.compose.foundation.gestures.stopScroll
 import com.nuvio.app.core.ui.LocalScreenActive
 import com.nuvio.app.core.ui.ScreenActivityEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,7 +43,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.foundation.focusGroup
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,6 +58,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -63,6 +71,12 @@ import com.nuvio.app.core.ui.NuvioDesktopVerticalScrollbar
 import com.nuvio.app.core.ui.NuvioScreen
 import com.nuvio.app.core.ui.NuvioScreenHeader
 import com.nuvio.app.core.ui.PlatformBackHandler
+import com.nuvio.app.core.ui.PlatformFocusPresence
+import com.nuvio.app.core.ui.SettingsFocusLinks
+import com.nuvio.app.core.ui.nuvioDebugFocusGroupTag
+import com.nuvio.app.core.ui.nuvioDebugFocusTag
+import com.nuvio.app.navigation.LocalNativeNavigationBarHidden
+import com.nuvio.app.navigation.LocalUseNativeNavigation
 import com.nuvio.app.core.ui.isLiquidGlassNativeTabBarSupported
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.details.MetaScreenSettingsRepository
@@ -110,6 +124,7 @@ import org.jetbrains.compose.resources.stringResource
 private val SettingsSearchRevealThreshold = 28.dp
 private const val SettingsSearchRevealAnimationMillis = 240L
 private const val SettingsSearchRevealHapticDelayMillis = 90L
+private const val SettingsContentFocusRetryFrames = 8
 
 private fun SettingsPage.isEnabledByPolicy(): Boolean =
     when (this) {
@@ -949,9 +964,70 @@ private fun TabletSettingsScreen(
 
     val navBarScrollState = LocalNuvioNavBarScrollState.current
 
+    val categoryEntryRequester = remember { FocusRequester() }
+    val contentEntryRequester = remember { FocusRequester() }
+    val backRequester = remember { FocusRequester() }
+    val focusRequestScope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+    val useNativeNavigation = LocalUseNativeNavigation.current
+    val nativeNavigationBarHidden = LocalNativeNavigationBarHidden.current
+
+    DisposableEffect(Unit) {
+        SettingsFocusLinks.categoryEntry = categoryEntryRequester
+        onDispose {
+            if (SettingsFocusLinks.categoryEntry === categoryEntryRequester) SettingsFocusLinks.categoryEntry = null
+            if (SettingsFocusLinks.contentEntry === contentEntryRequester) SettingsFocusLinks.contentEntry = null
+            if (SettingsFocusLinks.contentEntry === backRequester) SettingsFocusLinks.contentEntry = null
+        }
+    }
+    // cwrneirOS round 4: contentEntry must be a concrete attached node —
+    // the subpage header back button, or the first ringed content row on Root.
+    // A focus-group Box target could fail the redirect and fall through to the
+    // recovery anchor; a concrete node is focused directly.
+    SettingsFocusLinks.contentEntry = if (page == SettingsPage.Root) contentEntryRequester else backRequester
+
     LaunchedEffect(page) {
         if (page.opensInlineOnTablet) {
             selectedCategory = page.category.name
+        }
+    }
+
+    var lastPage by remember { mutableStateOf(page) }
+    LaunchedEffect(page) {
+        val from = lastPage
+        lastPage = page
+        if (page == from) return@LaunchedEffect
+        val internalBackAvailable = showInternalHeader &&
+            !(useNativeNavigation && !nativeNavigationBarHidden)
+        if (page != SettingsPage.Root && internalBackAvailable) {
+            // cwrneirOS round 4/4b: the header back button may not be attached on
+            // the first frames after the page swap; keep requesting until the
+            // request sticks AND survives a following frame — the recovery-anchor
+            // effect or a recomposition could otherwise take focus back and leave
+            // the subpage ring invisible.
+            repeat(SettingsContentFocusRetryFrames) {
+                withFrameNanos { }
+                if (backRequester.requestFocus()) {
+                    // cwrneirOS round 4d: move on to the first content entry in the
+                    // same frame so the back-button ring never paints; the back
+                    // button stays reachable via Up.
+                    focusManager.moveFocus(FocusDirection.Down)
+                    withFrameNanos { }
+                    if (PlatformFocusPresence.hasFocus && !PlatformFocusPresence.anchorActive) {
+                        return@LaunchedEffect
+                    }
+                }
+            }
+        } else {
+            repeat(SettingsContentFocusRetryFrames) {
+                withFrameNanos { }
+                if (SettingsFocusLinks.categoryEntry?.requestFocus() == true) {
+                    withFrameNanos { }
+                    if (PlatformFocusPresence.hasFocus && !PlatformFocusPresence.anchorActive) {
+                        return@LaunchedEffect
+                    }
+                }
+            }
         }
     }
 
@@ -1000,7 +1076,24 @@ private fun TabletSettingsScreen(
                                     onPageChange(SettingsPage.Root)
                                 }
                             }
+                            focusRequestScope.launch {
+                                repeat(SettingsContentFocusRetryFrames) {
+                                    withFrameNanos { }
+                                    if (SettingsFocusLinks.contentEntry?.requestFocus() == true) return@launch
+                                }
+                            }
                         },
+                        modifier = Modifier
+                            .focusProperties {
+                                if (category == SettingsCategory.entries.first()) up = FocusRequester.Cancel
+                                if (category == SettingsCategory.entries.last()) down = FocusRequester.Cancel
+                                SettingsFocusLinks.contentEntry?.let { right = it }
+                                // cwrneirOS round 4b: Left returns to the Settings
+                                // rail icon, the page that owns this column.
+                                SettingsFocusLinks.railEntries[AppScreenTab.Settings]?.let { left = it }
+                            }
+                            .nuvioDebugFocusTag("category-${category.name}")
+                            .then(if (category == activeCategory) Modifier.focusRequester(categoryEntryRequester) else Modifier),
                     )
                 }
             }
@@ -1084,7 +1177,14 @@ private fun TabletSettingsScreen(
                         .align(Alignment.CenterHorizontally)
                         .widthIn(max = if (isDesktop) 800.dp else Dp.Unspecified)
                         .fillMaxWidth()
-                        .weight(1f),
+                        .weight(1f)
+                        .nuvioDebugFocusGroupTag("content-group")
+                        .focusGroup()
+                        .focusProperties {
+                            // cwrneirOS round 4b: Left from any content node goes
+                            // back to the active category (inherited by rows).
+                            SettingsFocusLinks.categoryEntry?.let { left = it }
+                        },
                 ) {
                     LazyColumn(
                         state = listState,
@@ -1114,6 +1214,7 @@ private fun TabletSettingsScreen(
                                     },
                                     showBack = previousPage != null,
                                     onBack = { if (previousPage != null) onNavigateBack() },
+                                    backFocusRequester = backRequester,
                                 )
                             }
                         }
@@ -1131,6 +1232,13 @@ private fun TabletSettingsScreen(
                                 if (settingsSearchQuery.isBlank()) {
                                     settingsRootContent(
                                         isTablet = true,
+                                        firstRowModifier = Modifier
+                                            .focusRequester(contentEntryRequester)
+                                            // cwrneirOS round 4d: Root has no header back
+                                            // button, so Up from the first content entry
+                                            // must not leak into the categories (the
+                                            // header has no focus target there).
+                                            .focusProperties { up = FocusRequester.Cancel },
                                         onPlaybackClick = { openInlinePage(SettingsPage.Playback) },
                                         onAppearanceClick = { openInlinePage(SettingsPage.Appearance) },
                                         onAdvancedClick = { openInlinePage(SettingsPage.Advanced) },

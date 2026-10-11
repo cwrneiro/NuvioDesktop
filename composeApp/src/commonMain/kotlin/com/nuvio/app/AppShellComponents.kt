@@ -53,6 +53,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -66,7 +70,9 @@ import com.nuvio.app.core.ui.LocalNuvioNavBarScrollState
 import com.nuvio.app.core.ui.NuvioLoadingIndicator
 import com.nuvio.app.core.ui.NuvioNavBarScrollState
 import com.nuvio.app.core.ui.NuvioTokens
+import com.nuvio.app.core.ui.SettingsFocusLinks
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioDebugFocusTag
 import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.features.cloud.CloudLibraryContentType
 import com.nuvio.app.features.cloud.CloudLibraryFile
@@ -727,6 +733,18 @@ internal fun DesktopHoverSidebar(
     modifier: Modifier = Modifier,
 ) {
     val tokens = MaterialTheme.nuvio
+    // cwrneirOS round 4: explicit rail-corridor requesters (wired via focusProperties below).
+    val avatarFocusRequester = remember { FocusRequester() }
+    val homeFocusRequester = remember { FocusRequester() }
+    val searchFocusRequester = remember { FocusRequester() }
+    val libraryFocusRequester = remember { FocusRequester() }
+    val settingsFocusRequester = remember { FocusRequester() }
+    // cwrneirOS round 4b: expose the rail requesters so Left from content/rail can
+    // return to the owning tab icon (read by RootTabHost and SettingsScreen).
+    SettingsFocusLinks.railEntries[AppScreenTab.Home] = homeFocusRequester
+    SettingsFocusLinks.railEntries[AppScreenTab.Search] = searchFocusRequester
+    SettingsFocusLinks.railEntries[AppScreenTab.Library] = libraryFocusRequester
+    SettingsFocusLinks.railEntries[AppScreenTab.Settings] = settingsFocusRequester
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val profileState by ProfileRepository.state.collectAsStateWithLifecycle()
     val avatars by AvatarRepository.avatars.collectAsStateWithLifecycle()
@@ -783,6 +801,20 @@ internal fun DesktopHoverSidebar(
                     .height(DesktopSidebarItemHeight)
                     .padding(horizontal = 6.dp, vertical = 4.dp)
                     .nuvioFocusBorder(RoundedCornerShape(16.dp))
+                    .focusRequester(avatarFocusRequester)
+                    .focusProperties {
+                        // Corridor top end. While the profile switcher stack is
+                        // visible, Down keeps the default geometric edge into it.
+                        up = FocusRequester.Cancel
+                        down = if (profileStackVisible) FocusRequester.Default else homeFocusRequester
+                        // cwrneirOS round 4b: Right on the Settings tab goes to the
+                        // active category (a geometric jump into the top bar left
+                        // the ring invisible).
+                        if (selectedTab == AppScreenTab.Settings) {
+                            SettingsFocusLinks.categoryEntry?.let { right = it }
+                        }
+                    }
+                    .nuvioDebugFocusTag("rail-avatar")
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -803,6 +835,7 @@ internal fun DesktopHoverSidebar(
                     onProfileSelected = onProfileSelected,
                     onAddProfileRequested = onAddProfileRequested,
                     onDismissRequest = { onProfileStackVisibleChange(false) },
+                    lastRowDownRequester = homeFocusRequester,
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .padding(top = profileStackTop)
@@ -823,6 +856,21 @@ internal fun DesktopHoverSidebar(
                     selected = selectedTab == AppScreenTab.Home,
                     expanded = sidebarExpanded,
                     onClick = { selectTab(AppScreenTab.Home) },
+                    modifier = Modifier
+                        .focusRequester(homeFocusRequester)
+                        .focusProperties {
+                            up = avatarFocusRequester
+                            down = searchFocusRequester
+                            if (selectedTab == AppScreenTab.Settings) {
+                                SettingsFocusLinks.categoryEntry?.let { right = it }
+                                // cwrneirOS round 4c: while Settings is open the rail
+                                // items are non-candidates for 2D search (every
+                                // Settings-tab rail edge is explicit), so Down at the
+                                // bottom of the content pane cannot leak onto the rail.
+                                focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
+                            }
+                        }
+                        .nuvioDebugFocusTag("rail-home"),
                 ) { color ->
                     Icon(
                         imageVector = Icons.Filled.Home,
@@ -836,6 +884,19 @@ internal fun DesktopHoverSidebar(
                     selected = selectedTab == AppScreenTab.Search,
                     expanded = sidebarExpanded,
                     onClick = { selectTab(AppScreenTab.Search) },
+                    modifier = Modifier
+                        .focusRequester(searchFocusRequester)
+                        .focusProperties {
+                            up = homeFocusRequester
+                            down = libraryFocusRequester
+                            if (selectedTab == AppScreenTab.Settings) {
+                                SettingsFocusLinks.categoryEntry?.let { right = it }
+                                // cwrneirOS round 4c: non-candidate while Settings is
+                                // open (see rail-home).
+                                focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
+                            }
+                        }
+                        .nuvioDebugFocusTag("rail-search"),
                 ) { color ->
                     Icon(
                         painter = painterResource(Res.drawable.sidebar_search),
@@ -849,6 +910,19 @@ internal fun DesktopHoverSidebar(
                     selected = selectedTab == AppScreenTab.Library,
                     expanded = sidebarExpanded,
                     onClick = { selectTab(AppScreenTab.Library) },
+                    modifier = Modifier
+                        .focusRequester(libraryFocusRequester)
+                        .focusProperties {
+                            up = searchFocusRequester
+                            down = settingsFocusRequester
+                            if (selectedTab == AppScreenTab.Settings) {
+                                SettingsFocusLinks.categoryEntry?.let { right = it }
+                                // cwrneirOS round 4c: non-candidate while Settings is
+                                // open (see rail-home).
+                                focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
+                            }
+                        }
+                        .nuvioDebugFocusTag("rail-library"),
                 ) { color ->
                     Icon(
                         painter = painterResource(Res.drawable.sidebar_library),
@@ -862,6 +936,19 @@ internal fun DesktopHoverSidebar(
                     selected = selectedTab == AppScreenTab.Settings,
                     expanded = sidebarExpanded,
                     onClick = { selectTab(AppScreenTab.Settings) },
+                    modifier = Modifier
+                        .focusRequester(settingsFocusRequester)
+                        .focusProperties {
+                            up = libraryFocusRequester
+                            down = FocusRequester.Cancel
+                            if (selectedTab == AppScreenTab.Settings) {
+                                SettingsFocusLinks.categoryEntry?.let { right = it }
+                                // cwrneirOS round 4c: non-candidate while Settings is
+                                // open (see rail-home).
+                                focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
+                            }
+                        }
+                        .nuvioDebugFocusTag("rail-settings"),
                 ) { color ->
                     Icon(
                         imageVector = Icons.Rounded.Settings,
@@ -941,6 +1028,7 @@ private fun DesktopSidebarItem(
     selected: Boolean,
     expanded: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     icon: @Composable (Color) -> Unit,
 ) {
     val tokens = MaterialTheme.nuvio
@@ -949,7 +1037,7 @@ private fun DesktopSidebarItem(
 
     Surface(
         onClick = onClick,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(DesktopSidebarItemHeight)
             .padding(horizontal = 6.dp, vertical = 4.dp)

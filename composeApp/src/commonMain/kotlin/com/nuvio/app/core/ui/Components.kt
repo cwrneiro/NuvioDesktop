@@ -192,7 +192,10 @@ fun NuvioScreenHeader(
                 horizontalArrangement = Arrangement.spacedBy(tokens.spacing.controlGap),
             ) {
                 if (onBack != null) {
-                    IconButton(onClick = onBack) {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.nuvioFocusBorder(tokens.shapes.avatar),
+                    ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = stringResource(Res.string.action_back),
@@ -251,7 +254,9 @@ fun NuvioActionLabel(
         text = text,
         modifier = modifier.then(
             if (onClick != null) {
-                Modifier.clickable(onClick = onClick)
+                Modifier
+                    .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4))
+                    .clickable(onClick = onClick)
             } else {
                 Modifier
             }
@@ -272,6 +277,7 @@ fun NuvioIconActionButton(
     val tokens = MaterialTheme.nuvio
     IconButton(
         modifier = modifier
+            .nuvioFocusBorder(tokens.shapes.avatar)
             .background(
                 color = tokens.colors.background.copy(alpha = 0.001f),
                 shape = tokens.shapes.avatar,
@@ -304,6 +310,7 @@ fun NuvioBackButton(
     Box(
         modifier = modifier
             .size(buttonSize)
+            .nuvioFocusBorder(shape)
             .clip(shape)
             .background(effectiveContainerColor)
             .clickable(onClick = onClick),
@@ -330,7 +337,8 @@ fun NuvioPrimaryButton(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(NuvioTokens.Space.s48 + NuvioTokens.Space.s4),
+            .height(NuvioTokens.Space.s48 + NuvioTokens.Space.s4)
+            .nuvioFocusBorder(tokens.shapes.button),
         enabled = enabled,
         shape = tokens.shapes.button,
         colors = ButtonDefaults.buttonColors(

@@ -74,7 +74,7 @@ internal fun LibraryListEditor(
                 onValueChange = onDescriptionChange,
                 label = { Text(stringResource(Res.string.library_list_description)) },
                 enabled = !state.isPending,
-                modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(),
+                modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(singleLine = false),
                 shape = tokens.shapes.compactCard,
                 colors = inputColors,
                 minLines = 2,

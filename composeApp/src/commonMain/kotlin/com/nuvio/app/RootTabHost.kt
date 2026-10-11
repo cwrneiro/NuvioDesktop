@@ -24,6 +24,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
 import androidx.lifecycle.compose.rememberLifecycleOwner
 import com.nuvio.app.core.ui.LocalScreenActive
+import com.nuvio.app.core.ui.SettingsFocusLinks
 
 @Composable
 internal fun RootTabHost(
@@ -36,7 +37,12 @@ internal fun RootTabHost(
     val parentLifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
     val hostActive = active && parentLifecycleState.isAtLeast(Lifecycle.State.STARTED)
     val focusManager = LocalFocusManager.current
-    DisposableEffect(selectedTab, hostActive, profileId) {
+    // Tab changes must not clear focus: RootTabPane's `focusProperties { canFocus = active }`
+    // already clears focus inside a deactivated pane; the eager clear left focus nowhere,
+    // which on hardware made the ring vanish after selecting Settings, made arrows/Tab behave
+    // inconsistently, and made B/Esc be dropped until an arrow re-established focus.
+    // Keep the clear for profile switch/host disposal.
+    DisposableEffect(profileId) {
         onDispose { focusManager.clearFocus(force = true) }
     }
 
@@ -87,7 +93,15 @@ private fun RootTabPane(
             Box(
                 Modifier.fillMaxSize()
                     .graphicsLayer()
-                    .focusProperties { canFocus = active }
+                    .focusProperties {
+                        canFocus = active
+                        // cwrneirOS round 4b: Left from a tab's content returns to the
+                        // rail icon that owns the tab. Settings keeps its own
+                        // category/content left edges (deeper in the tree).
+                        if (tab != AppScreenTab.Settings) {
+                            SettingsFocusLinks.railEntries[tab]?.let { left = it }
+                        }
+                    }
                     .pointerInput(active) {
                         if (!active) {
                             awaitPointerEventScope {

@@ -344,7 +344,7 @@ private fun BadgeUrlManagerDialog(
                 draftUrl = it
                 errorMessage = null
             },
-            modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(),
+            modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(singleLine = false),
             label = { Text(stringResource(Res.string.settings_fusion_badge_url_label)) },
             singleLine = false,
             minLines = 2,

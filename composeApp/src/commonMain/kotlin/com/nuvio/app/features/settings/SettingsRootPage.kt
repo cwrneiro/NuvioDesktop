@@ -16,6 +16,7 @@ import androidx.compose.material.icons.rounded.People
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Policy
 import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_settings_page_account
@@ -76,6 +77,7 @@ internal fun LazyListScope.settingsRootContent(
     showAdvancedSection: Boolean = true,
     showSupportersContributorsPage: Boolean = true,
     showAttribution: Boolean = true,
+    firstRowModifier: Modifier = Modifier,
 ) {
     if (showAccountSection) {
         item {
@@ -90,6 +92,7 @@ internal fun LazyListScope.settingsRootContent(
                             description = stringResource(Res.string.compose_settings_root_switch_profile_description),
                             icon = Icons.Rounded.People,
                             isTablet = isTablet,
+                            modifier = firstRowModifier,
                             onClick = onSwitchProfileClick,
                         )
                         SettingsGroupDivider(isTablet = isTablet)
@@ -99,6 +102,7 @@ internal fun LazyListScope.settingsRootContent(
                         description = stringResource(Res.string.compose_settings_root_account_description),
                         icon = Icons.Rounded.AccountCircle,
                         isTablet = isTablet,
+                        modifier = if (onSwitchProfileClick == null) firstRowModifier else Modifier,
                         onClick = onAccountClick,
                     )
                     SettingsGroupDivider(isTablet = isTablet)
@@ -125,6 +129,7 @@ internal fun LazyListScope.settingsRootContent(
                         description = stringResource(Res.string.compose_settings_root_appearance_description),
                         icon = Icons.Rounded.Palette,
                         isTablet = isTablet,
+                        modifier = firstRowModifier,
                         onClick = onAppearanceClick,
                     )
                     SettingsGroupDivider(isTablet = isTablet)
@@ -179,6 +184,7 @@ internal fun LazyListScope.settingsRootContent(
                             description = stringResource(Res.string.about_supporters_contributors_subtitle),
                             icon = Icons.Rounded.Favorite,
                             isTablet = isTablet,
+                            modifier = firstRowModifier,
                             onClick = onSupportersContributorsClick,
                         )
                         SettingsGroupDivider(isTablet = isTablet)
@@ -188,6 +194,7 @@ internal fun LazyListScope.settingsRootContent(
                         description = stringResource(Res.string.compose_settings_root_privacy_policy_description),
                         icon = Icons.Rounded.Policy,
                         isTablet = isTablet,
+                        modifier = if (showSupportersContributorsPage) Modifier else firstRowModifier,
                         onClick = { uriHandler.openUri(PRIVACY_POLICY_URL) },
                     )
                     SettingsGroupDivider(isTablet = isTablet)
@@ -236,6 +243,7 @@ internal fun LazyListScope.settingsRootContent(
                         description = stringResource(Res.string.compose_settings_root_advanced_description),
                         icon = Icons.Rounded.Tune,
                         isTablet = isTablet,
+                        modifier = firstRowModifier,
                         onClick = onAdvancedClick,
                     )
                 }

@@ -40,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
@@ -405,7 +406,16 @@ internal fun SettingsSwitchRow(
             checked = checked,
             onCheckedChange = onCheckedChange,
             enabled = enabled,
-            modifier = Modifier.padding(start = 4.dp),
+            // Material3's Switch applies its own `toggleable`, which registers
+            // a separate focus target. D-pad focus therefore landed on the
+            // Switch instead of the row's clickable, and the row's focus ring
+            // went missing. Suppress the Switch's focus target so the row is a
+            // single focus stop; touch and the row's A/Enter clickable still
+            // toggle it, and a disabled row stays non-focusable (both the
+            // disabled clickable and this Switch opt out).
+            modifier = Modifier
+                .padding(start = 4.dp)
+                .focusProperties { canFocus = false },
             colors = SwitchDefaults.colors(
                 checkedThumbColor = tokens.colors.onAccent,
                 checkedTrackColor = tokens.colors.accent,

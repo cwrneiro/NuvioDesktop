@@ -71,6 +71,8 @@ import com.nuvio.app.core.ui.NuvioViewAllPillSize
 import com.nuvio.app.core.ui.ScopedDisintegrationTracker
 import com.nuvio.app.core.ui.SkeletonBlock
 import com.nuvio.app.core.ui.nuvioConsumePointerEvents
+import com.nuvio.app.core.ui.nuvioDebugFocusTag
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.nuvioTracksTextInput
 import com.nuvio.app.core.ui.posterGridColumnCountForViewport
 import com.nuvio.app.features.home.components.posterGridColumnCountForWidth
@@ -819,6 +821,8 @@ private fun LibraryChip(
     val colorScheme = MaterialTheme.colorScheme
     Surface(
         modifier = Modifier
+            .nuvioFocusBorder(RoundedCornerShape(18.dp))
+            .nuvioDebugFocusTag("library-source-chip")
             .clip(RoundedCornerShape(18.dp))
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(18.dp),
@@ -854,6 +858,7 @@ private fun CloudLibraryRow(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 6.dp)
+            .nuvioFocusBorder(MaterialTheme.shapes.medium)
             .clickable(enabled = playableCount > 0, onClick = onClick),
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -1002,6 +1007,7 @@ private fun CloudLibraryFileRow(
     Surface(
         modifier = modifier
             .fillMaxWidth()
+            .nuvioFocusBorder(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.58f),

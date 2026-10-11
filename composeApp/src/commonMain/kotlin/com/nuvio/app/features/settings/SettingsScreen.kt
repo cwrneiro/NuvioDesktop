@@ -1008,11 +1008,12 @@ private fun TabletSettingsScreen(
             repeat(SettingsContentFocusRetryFrames) {
                 withFrameNanos { }
                 if (backRequester.requestFocus()) {
+                    // cwrneirOS round 4d: move on to the first content entry in the
+                    // same frame so the back-button ring never paints; the back
+                    // button stays reachable via Up.
+                    focusManager.moveFocus(FocusDirection.Down)
                     withFrameNanos { }
                     if (PlatformFocusPresence.hasFocus && !PlatformFocusPresence.anchorActive) {
-                        // cwrneirOS round 4c: land on the first content entry — the
-                        // header back button stays one Up away (retest-4/5 feedback).
-                        focusManager.moveFocus(FocusDirection.Down)
                         return@LaunchedEffect
                     }
                 }
@@ -1231,7 +1232,13 @@ private fun TabletSettingsScreen(
                                 if (settingsSearchQuery.isBlank()) {
                                     settingsRootContent(
                                         isTablet = true,
-                                        firstRowModifier = Modifier.focusRequester(contentEntryRequester),
+                                        firstRowModifier = Modifier
+                                            .focusRequester(contentEntryRequester)
+                                            // cwrneirOS round 4d: Root has no header back
+                                            // button, so Up from the first content entry
+                                            // must not leak into the categories (the
+                                            // header has no focus target there).
+                                            .focusProperties { up = FocusRequester.Cancel },
                                         onPlaybackClick = { openInlinePage(SettingsPage.Playback) },
                                         onAppearanceClick = { openInlinePage(SettingsPage.Appearance) },
                                         onAdvancedClick = { openInlinePage(SettingsPage.Advanced) },

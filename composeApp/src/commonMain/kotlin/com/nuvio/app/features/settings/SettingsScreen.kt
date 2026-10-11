@@ -982,11 +982,12 @@ private fun TabletSettingsScreen(
             if (SettingsFocusLinks.contentEntry === contentGroupRequester) SettingsFocusLinks.contentEntry = null
         }
     }
-    // cwrneirOS consolidation fix (2026-10-08): on Root, target the always-composed
-    // content-group Box. Its first row (contentEntryRequester) is uncomposed once the
-    // pane is scrolled, so Right from a category used to no-op; the group redirects
-    // into a placed child. Subpages keep the concrete header back button target.
-    SettingsFocusLinks.contentEntry = if (page == SettingsPage.Root) contentGroupRequester else backRequester
+    // cwrneirOS consolidation fix (2026-10-08): target the always-composed
+    // content-group Box on BOTH Root and subpages. Its first row
+    // (contentEntryRequester) / header back button are uncomposed once the pane is
+    // scrolled, so Right from a category (or on subpage re-entry) used to no-op or
+    // land on the wrong node; the group redirects into a placed (visible) child.
+    SettingsFocusLinks.contentEntry = contentGroupRequester
 
     LaunchedEffect(page) {
         if (page.opensInlineOnTablet) {
@@ -1014,6 +1015,14 @@ private fun TabletSettingsScreen(
                     // same frame so the back-button ring never paints; the back
                     // button stays reachable via Up.
                     focusManager.moveFocus(FocusDirection.Down)
+                    withFrameNanos { }
+                    if (PlatformFocusPresence.hasFocus && !PlatformFocusPresence.anchorActive) {
+                        return@LaunchedEffect
+                    }
+                } else if (contentGroupRequester.requestFocus()) {
+                    // cwrneirOS: scrolled subpage — the header back button is
+                    // uncomposed, so fall back to the always-composed content
+                    // group, which redirects into a placed (visible) row.
                     withFrameNanos { }
                     if (PlatformFocusPresence.hasFocus && !PlatformFocusPresence.anchorActive) {
                         return@LaunchedEffect

@@ -60,6 +60,8 @@ internal fun FullscreenActionButton(
     Box(
         modifier = modifier
             .size(buttonSize)
+            // cwrneirOS: ring before the shape clip and the clickable focus target.
+            .nuvioFocusBorder(CircleShape)
             .clip(CircleShape)
             .background(containerColor)
             .clickable(

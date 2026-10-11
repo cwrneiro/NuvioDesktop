@@ -104,7 +104,13 @@ internal fun SettingsGroup(
         isTablet = isTablet,
         modifier = modifier,
     ) {
-        Column(content = content)
+        Column(
+            // nuvioFocusBorder rings inflate up to 4dp outside their row and the
+            // card Surface clips to its rounded shape; this 4dp breathing room
+            // keeps the first/last rows' top/bottom ring strokes inside the clip.
+            modifier = Modifier.padding(vertical = NuvioTokens.Space.s4),
+            content = content,
+        )
     }
 }
 
@@ -274,7 +280,13 @@ internal fun SettingsNavigationRow(
             .padding(horizontal = NuvioTokens.Space.s4)
             .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4))
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = horizontalPadding, vertical = verticalPadding)
+            // Reclaim the 4dp inset inside the content padding so text and
+            // trailing content keep their original absolute position
+            // (SettingsGroupDivider is pinned to that alignment).
+            .padding(
+                horizontal = horizontalPadding - NuvioTokens.Space.s4,
+                vertical = verticalPadding,
+            )
             .alpha(if (enabled) NuvioTokens.Opacity.visible else tokens.opacity.medium),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
@@ -353,9 +365,17 @@ internal fun SettingsSwitchRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            // Match SettingsNavigationRow: inset the focusable box 4dp before
+            // nuvioFocusBorder (the ring draws up to 4dp outside the node) so
+            // the enclosing SettingsCard clip cannot shave the left/right ring
+            // strokes; content padding drops by the same 4dp so nothing shifts.
+            .padding(horizontal = NuvioTokens.Space.s4)
             .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4))
             .clickable(enabled = enabled) { onCheckedChange(!checked) }
-            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
+            .padding(
+                horizontal = horizontalPadding - NuvioTokens.Space.s4,
+                vertical = verticalPadding,
+            ),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
     ) {

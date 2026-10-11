@@ -56,6 +56,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -862,6 +863,11 @@ internal fun DesktopHoverSidebar(
                             down = searchFocusRequester
                             if (selectedTab == AppScreenTab.Settings) {
                                 SettingsFocusLinks.categoryEntry?.let { right = it }
+                                // cwrneirOS round 4c: while Settings is open the rail
+                                // items are non-candidates for 2D search (every
+                                // Settings-tab rail edge is explicit), so Down at the
+                                // bottom of the content pane cannot leak onto the rail.
+                                focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
                             }
                         }
                         .nuvioDebugFocusTag("rail-home"),
@@ -885,6 +891,9 @@ internal fun DesktopHoverSidebar(
                             down = libraryFocusRequester
                             if (selectedTab == AppScreenTab.Settings) {
                                 SettingsFocusLinks.categoryEntry?.let { right = it }
+                                // cwrneirOS round 4c: non-candidate while Settings is
+                                // open (see rail-home).
+                                focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
                             }
                         }
                         .nuvioDebugFocusTag("rail-search"),
@@ -908,6 +917,9 @@ internal fun DesktopHoverSidebar(
                             down = settingsFocusRequester
                             if (selectedTab == AppScreenTab.Settings) {
                                 SettingsFocusLinks.categoryEntry?.let { right = it }
+                                // cwrneirOS round 4c: non-candidate while Settings is
+                                // open (see rail-home).
+                                focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
                             }
                         }
                         .nuvioDebugFocusTag("rail-library"),
@@ -931,6 +943,9 @@ internal fun DesktopHoverSidebar(
                             down = FocusRequester.Cancel
                             if (selectedTab == AppScreenTab.Settings) {
                                 SettingsFocusLinks.categoryEntry?.let { right = it }
+                                // cwrneirOS round 4c: non-candidate while Settings is
+                                // open (see rail-home).
+                                focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
                             }
                         }
                         .nuvioDebugFocusTag("rail-settings"),

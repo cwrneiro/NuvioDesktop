@@ -45,6 +45,7 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.focusProperties
@@ -57,6 +58,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -966,6 +968,7 @@ private fun TabletSettingsScreen(
     val contentEntryRequester = remember { FocusRequester() }
     val backRequester = remember { FocusRequester() }
     val focusRequestScope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
     val useNativeNavigation = LocalUseNativeNavigation.current
     val nativeNavigationBarHidden = LocalNativeNavigationBarHidden.current
 
@@ -1007,6 +1010,9 @@ private fun TabletSettingsScreen(
                 if (backRequester.requestFocus()) {
                     withFrameNanos { }
                     if (PlatformFocusPresence.hasFocus && !PlatformFocusPresence.anchorActive) {
+                        // cwrneirOS round 4c: land on the first content entry — the
+                        // header back button stays one Up away (retest-4/5 feedback).
+                        focusManager.moveFocus(FocusDirection.Down)
                         return@LaunchedEffect
                     }
                 }

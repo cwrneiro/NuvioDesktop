@@ -320,6 +320,7 @@ fun LibraryScreen(
                                         onClick = {
                                             LibraryDisplaySettingsRepository.setLayoutMode(targetLayout)
                                         },
+                                        modifier = Modifier.nuvioFocusBorder(RoundedCornerShape(50)),
                                     ) {
                                         Crossfade(
                                             targetState = targetLayout,
@@ -674,7 +675,10 @@ private fun CloudLibrarySearchField(
         },
         trailingIcon = {
             if (query.isNotEmpty()) {
-                IconButton(onClick = { onQueryChange("") }) {
+                IconButton(
+                    onClick = { onQueryChange("") },
+                    modifier = Modifier.nuvioFocusBorder(RoundedCornerShape(50)),
+                ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
                         contentDescription = stringResource(Res.string.compose_search_clear),
@@ -799,7 +803,10 @@ private fun CloudLibraryToolbar(
                     },
                 )
             }
-            IconButton(onClick = onRefresh) {
+            IconButton(
+                onClick = onRefresh,
+                modifier = Modifier.nuvioFocusBorder(RoundedCornerShape(50)),
+            ) {
                 Icon(
                     imageVector = Icons.Rounded.Refresh,
                     contentDescription = stringResource(Res.string.cloud_library_refresh),
@@ -902,7 +909,10 @@ private fun CloudLibraryRow(
                     )
                 }
                 if (playableCount > 0) {
-                    IconButton(onClick = onClick) {
+                    IconButton(
+                        onClick = onClick,
+                        modifier = Modifier.nuvioFocusBorder(RoundedCornerShape(50)),
+                    ) {
                         Icon(
                             imageVector = Icons.Rounded.PlayArrow,
                             contentDescription = stringResource(Res.string.action_play),
@@ -947,7 +957,10 @@ private fun CloudLibraryFilePicker(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                IconButton(onClick = onBack) {
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier.nuvioFocusBorder(RoundedCornerShape(50)),
+                ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                         contentDescription = stringResource(Res.string.action_back),

@@ -50,6 +50,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -967,6 +968,7 @@ private fun TabletSettingsScreen(
     val categoryEntryRequester = remember { FocusRequester() }
     val contentEntryRequester = remember { FocusRequester() }
     val backRequester = remember { FocusRequester() }
+    val contentGroupRequester = remember { FocusRequester() }
     val focusRequestScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val useNativeNavigation = LocalUseNativeNavigation.current
@@ -978,13 +980,15 @@ private fun TabletSettingsScreen(
             if (SettingsFocusLinks.categoryEntry === categoryEntryRequester) SettingsFocusLinks.categoryEntry = null
             if (SettingsFocusLinks.contentEntry === contentEntryRequester) SettingsFocusLinks.contentEntry = null
             if (SettingsFocusLinks.contentEntry === backRequester) SettingsFocusLinks.contentEntry = null
+            if (SettingsFocusLinks.contentEntry === contentGroupRequester) SettingsFocusLinks.contentEntry = null
         }
     }
-    // cwrneirOS round 4: contentEntry must be a concrete attached node —
-    // the subpage header back button, or the first ringed content row on Root.
-    // A focus-group Box target could fail the redirect and fall through to the
-    // recovery anchor; a concrete node is focused directly.
-    SettingsFocusLinks.contentEntry = if (page == SettingsPage.Root) contentEntryRequester else backRequester
+    // cwrneirOS consolidation fix (2026-10-08): target the always-composed
+    // content-group Box on BOTH Root and subpages. Its first row
+    // (contentEntryRequester) / header back button are uncomposed once the pane is
+    // scrolled, so Right from a category (or on subpage re-entry) used to no-op or
+    // land on the wrong node; the group redirects into a placed (visible) child.
+    SettingsFocusLinks.contentEntry = contentGroupRequester
 
     LaunchedEffect(page) {
         if (page.opensInlineOnTablet) {
@@ -1012,6 +1016,14 @@ private fun TabletSettingsScreen(
                     // same frame so the back-button ring never paints; the back
                     // button stays reachable via Up.
                     focusManager.moveFocus(FocusDirection.Down)
+                    withFrameNanos { }
+                    if (PlatformFocusPresence.hasFocus && !PlatformFocusPresence.anchorActive) {
+                        return@LaunchedEffect
+                    }
+                } else if (contentGroupRequester.requestFocus()) {
+                    // cwrneirOS: scrolled subpage — the header back button is
+                    // uncomposed, so fall back to the always-composed content
+                    // group, which redirects into a placed (visible) row.
                     withFrameNanos { }
                     if (PlatformFocusPresence.hasFocus && !PlatformFocusPresence.anchorActive) {
                         return@LaunchedEffect
@@ -1133,7 +1145,11 @@ private fun TabletSettingsScreen(
                     }
                 }
 
-                val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
+                val listState = if (page == SettingsPage.Root) {
+                    rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
+                } else {
+                    remember { LazyListState() }
+                }
                 ScreenActivityEffect(listState) { active ->
                     if (!active) listState.stopScroll()
                 }
@@ -1179,7 +1195,9 @@ private fun TabletSettingsScreen(
                         .fillMaxWidth()
                         .weight(1f)
                         .nuvioDebugFocusGroupTag("content-group")
+                        .focusRestorer()
                         .focusGroup()
+                        .focusRequester(contentGroupRequester)
                         .focusProperties {
                             // cwrneirOS round 4b: Left from any content node goes
                             // back to the active category (inherited by rows).
@@ -1190,6 +1208,7 @@ private fun TabletSettingsScreen(
                         state = listState,
                         modifier = Modifier
                             .fillMaxSize()
+                            .focusRestorer()
                             .nestedScroll(rootSearchRevealConnection),
                         contentPadding = PaddingValues(
                             start = 40.dp,

@@ -58,6 +58,7 @@ import com.nuvio.app.core.ui.DialogSurface
 import com.nuvio.app.core.ui.NuvioLoadingIndicator
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.features.profiles.ProfileRepository
 import com.nuvio.app.features.simkl.SimklAuthError
 import com.nuvio.app.features.simkl.SimklAuthRepository
@@ -602,6 +603,7 @@ private fun TrackingApprovalCode(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
+            .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Radius.md))
             .clickable(onClick = onCopy),
         shape = RoundedCornerShape(NuvioTokens.Radius.md),
         color = Color.White.copy(alpha = 0.12f),

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Visibility
@@ -49,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.nuvioTracksTextInput
 import com.nuvio.app.features.streams.STREAM_BADGE_IMPORT_LIMIT
 import com.nuvio.app.features.streams.StreamBadgeChip
@@ -232,7 +234,7 @@ private fun StreamBackgroundModeDialog(
         )
         StreamBackgroundMode.entries.forEach { mode ->
             Row(
-                modifier = Modifier.fillMaxWidth().selectable(
+                modifier = Modifier.fillMaxWidth().nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4)).selectable(
                     selected = mode == selectedMode,
                     role = Role.RadioButton,
                     onClick = { onModeSelected(mode) },

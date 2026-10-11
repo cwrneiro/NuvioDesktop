@@ -54,6 +54,7 @@ import com.nuvio.app.core.ui.NuvioAsyncImage as AsyncImage
 import com.nuvio.app.core.ui.NuvioScreen
 import com.nuvio.app.core.ui.NuvioScreenHeader
 import com.nuvio.app.core.ui.NuvioSurfaceCard
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.features.addons.httpRequestRaw
 import com.nuvio.app.features.membership.MembershipOverviewRepository
 import kotlinx.coroutines.launch
@@ -711,6 +712,7 @@ private fun ContributorRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .nuvioFocusBorder(RoundedCornerShape(18.dp))
             .clip(RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
             .padding(vertical = 8.dp),
@@ -751,6 +753,7 @@ private fun SupporterRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .nuvioFocusBorder(RoundedCornerShape(18.dp))
             .clip(RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
             .padding(vertical = 8.dp),

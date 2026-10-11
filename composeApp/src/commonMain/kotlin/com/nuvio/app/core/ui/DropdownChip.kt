@@ -62,6 +62,7 @@ fun NuvioDropdownChip(
     Box(modifier = modifier) {
         Row(
             modifier = Modifier
+                .nuvioFocusBorder(tokens.shapes.compactCard)
                 .clip(tokens.shapes.compactCard)
                 .background(tokens.colors.surface)
                 .then(

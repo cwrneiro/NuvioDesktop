@@ -42,6 +42,7 @@ import com.nuvio.app.core.ui.ThemeColors
 import com.nuvio.app.core.ui.accentBrush
 import com.nuvio.app.core.ui.labelRes
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.features.membership.MemberAccessRepository
 import com.nuvio.app.features.membership.availableAppThemes
 import com.nuvio.app.features.profiles.ProfileRepository
@@ -123,6 +124,7 @@ private fun ThemeChip(
     val palette = remember(theme, customColors) { ThemeColors.getColorPalette(theme, customColors) }
     Column(
         modifier = modifier
+            .nuvioFocusBorder(tokens.shapes.compactCard)
             .clip(tokens.shapes.compactCard)
             .selectable(selected = isSelected, role = Role.RadioButton, onClick = onClick)
             .padding(horizontal = NuvioTokens.Space.s4, vertical = NuvioTokens.Space.s8),

@@ -44,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -689,6 +690,10 @@ private fun HeroPageIndicatorRow(
             val activeFraction = heroPageVisibility(pagerState, page)
             Box(
                 modifier = Modifier
+                    // cwrneirOS: page-indicator dots are decorative pointer-only
+                    // affordances; opt out of couch/D-pad focus so they are not
+                    // ringless dead-end focus stops.
+                    .focusProperties { canFocus = false }
                     .clickable {
                         coroutineScope.launch {
                             pagerState.animateScrollToPage(heroPageForItem(pagerState.currentPage, index, itemCount))
@@ -750,6 +755,8 @@ private fun HeroPageIndicatorDot(
 ) {
     Box(
         modifier = Modifier
+            // cwrneirOS: decorative pointer-only dot; keep it out of the focus order.
+            .focusProperties { canFocus = false }
             .clickable(onClick = onClick)
             .clip(CircleShape)
             .background(MaterialTheme.colorScheme.onBackground)

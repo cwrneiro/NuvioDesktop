@@ -57,6 +57,7 @@ import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.core.build.TrailerPlaybackMode
 import com.nuvio.app.core.ui.Chip
 import com.nuvio.app.core.ui.NuvioActionLabel
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.features.details.MetaEpisodeCardStyle
 import com.nuvio.app.features.details.MetaScreenBackgroundMode
 import com.nuvio.app.features.details.MetaScreenSectionItem
@@ -500,6 +501,7 @@ private fun MetaEpisodeCardStyleOption(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
+            .nuvioFocusBorder(RoundedCornerShape(12.dp))
             .selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
         color = if (selected) {
             MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)

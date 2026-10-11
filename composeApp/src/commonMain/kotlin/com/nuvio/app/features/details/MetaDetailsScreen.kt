@@ -57,10 +57,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -94,6 +97,7 @@ import com.nuvio.app.core.ui.PosterZoomAnchor
 import com.nuvio.app.core.ui.PosterZoomAnchorHolder
 import com.nuvio.app.core.ui.PosterZoomOverlayAction
 import com.nuvio.app.core.ui.desktopPageHorizontalPaddingForWidth
+import com.nuvio.app.core.ui.nuvioDebugFocusTag
 import com.nuvio.app.core.ui.nuvioDesktopDragScroll
 import com.nuvio.app.core.ui.ScreenActivityEffect
 import com.nuvio.app.core.ui.TrackingListPickerDialog
@@ -226,6 +230,7 @@ fun MetaDetailsScreen(
     val uiState by MetaDetailsRepository.uiState.collectAsStateWithLifecycle()
     val displayedMeta = uiState.meta?.takeIf { it.type == type && it.id == id }
         ?: MetaDetailsRepository.peek(type, id)
+    val primaryActionFocusRequester = remember { FocusRequester() }
     val metaScreenSettingsUiState by remember {
         MetaScreenSettingsRepository.ensureLoaded()
         MetaScreenSettingsRepository.uiState
@@ -361,6 +366,18 @@ fun MetaDetailsScreen(
         if (displayedMeta != null) {
             delay(250)
             deferredMetaWorkAllowed = true
+        }
+    }
+
+    // cwrneirOS: details has no entry focus effect, so after the nav push removes
+    // the poster that held focus, focus parks on the desktop back button and
+    // Up/Down/Right never reach the content. Request the primary action (play)
+    // across a few frames until it is placed, mirroring the Settings entry pattern.
+    LaunchedEffect(displayedMeta?.id) {
+        if (displayedMeta == null) return@LaunchedEffect
+        repeat(8) {
+            withFrameNanos { }
+            if (primaryActionFocusRequester.requestFocus()) return@LaunchedEffect
         }
     }
 
@@ -1324,6 +1341,7 @@ fun MetaDetailsScreen(
                                         onWatchedClick = toggleWatched,
                                         onSaveClick = toggleSaved,
                                         onSaveLongClick = openLibraryListPicker,
+                                        primaryActionFocusRequester = primaryActionFocusRequester,
                                     )
                                 }
                                 configuredMetaSectionItems(
@@ -1418,6 +1436,7 @@ fun MetaDetailsScreen(
                                     onCompanyClick = onCompanyClick,
                                     sharedTransitionScope = sharedTransitionScope,
                                     animatedVisibilityScope = animatedVisibilityScope,
+                                    primaryActionFocusRequester = primaryActionFocusRequester,
                                 )
                             } else {
                                 item(
@@ -1586,6 +1605,7 @@ fun MetaDetailsScreen(
                                     onCompanyClick = onCompanyClick,
                                     sharedTransitionScope = sharedTransitionScope,
                                     animatedVisibilityScope = animatedVisibilityScope,
+                                    primaryActionFocusRequester = primaryActionFocusRequester,
                                 )
                             }
 
@@ -1650,6 +1670,7 @@ fun MetaDetailsScreen(
                                 modifier = Modifier
                                     .statusBarsPadding()
                                     .padding(start = desktopPageHorizontalPadding, top = 32.dp)
+                                    .nuvioDebugFocusTag("detail-back")
                                     .zIndex(2f),
                                 containerColor = Color.Black.copy(alpha = 0.34f),
                                 showContainerOnDesktop = true,
@@ -2254,6 +2275,7 @@ private fun LazyListScope.configuredMetaSectionItems(
     onCompanyClick: ((MetaCompany, String) -> Unit)?,
     sharedTransitionScope: SharedTransitionScope?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
+    primaryActionFocusRequester: FocusRequester? = null,
 ) {
     val enabledItems = settings.items.filter { it.enabled }
     fun sectionHasContent(key: MetaScreenSectionKey): Boolean =
@@ -2335,6 +2357,7 @@ private fun LazyListScope.configuredMetaSectionItems(
                     onCompanyClick = onCompanyClick,
                     sharedTransitionScope = sharedTransitionScope,
                     animatedVisibilityScope = animatedVisibilityScope,
+                    primaryActionFocusRequester = primaryActionFocusRequester,
                 )
             }
         }
@@ -2564,6 +2587,7 @@ private fun ConfiguredMetaSections(
     onCompanyClick: ((MetaCompany, String) -> Unit)?,
     sharedTransitionScope: SharedTransitionScope?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
+    primaryActionFocusRequester: FocusRequester? = null,
 ) {
     val enabledItems = settings.items.filter { it.enabled }
 
@@ -2600,6 +2624,7 @@ private fun ConfiguredMetaSections(
                     onWatchedClick = onWatchedClick,
                     onSaveClick = onSaveClick,
                     onSaveLongClick = onSaveLongClick,
+                    primaryActionFocusRequester = primaryActionFocusRequester,
                 )
             }
             MetaScreenSectionKey.OVERVIEW -> {

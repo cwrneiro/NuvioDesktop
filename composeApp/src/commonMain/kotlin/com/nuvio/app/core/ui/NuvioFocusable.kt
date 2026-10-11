@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -51,6 +52,7 @@ fun Modifier.nuvioFocusBorder(
     var focused by remember { mutableStateOf(false) }
     val tokens = MaterialTheme.nuvio
     this
+        .semantics { nuvioHasFocusRing = true }
         .onFocusChanged { focused = it.hasFocus }
         .drawBehind {
             if (!focused) return@drawBehind
@@ -75,11 +77,11 @@ fun Modifier.nuvioFocusBorder(
  * target. Pull `nuvio-focus:` lines from the unit journal; removed at closeout.
  */
 fun Modifier.nuvioDebugFocusTag(label: String): Modifier =
-    onFocusChanged { if (it.isFocused) println("nuvio-focus: $label") }
+    onFocusChanged { if (it.isFocused) NuvioFocusDiagnostics.log("nuvio-focus: $label") }
 
 /**
  * cwrneirOS retest-4b diagnostic for focus groups (canFocus=false containers):
  * prints when focus is anywhere inside this subtree.
  */
 fun Modifier.nuvioDebugFocusGroupTag(label: String): Modifier =
-    onFocusChanged { if (it.hasFocus) println("nuvio-focus: $label *") }
+    onFocusChanged { if (it.hasFocus) NuvioFocusDiagnostics.log("nuvio-focus: $label *") }

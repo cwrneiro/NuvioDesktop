@@ -1,0 +1,455 @@
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt
+index e1b0d64..50f3896 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt
+@@ -53,6 +53,7 @@ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.draw.alpha
+ import androidx.compose.ui.draw.clip
++import androidx.compose.ui.focus.focusProperties
+ import androidx.compose.ui.graphics.Brush
+ import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.text.TextStyle
+@@ -66,6 +67,7 @@ import com.nuvio.app.core.ui.LocalNuvioNavBarScrollState
+ import com.nuvio.app.core.ui.NuvioLoadingIndicator
+ import com.nuvio.app.core.ui.NuvioNavBarScrollState
+ import com.nuvio.app.core.ui.NuvioTokens
++import com.nuvio.app.core.ui.SettingsFocusLinks
+ import com.nuvio.app.core.ui.nuvio
+ import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.features.cloud.CloudLibraryContentType
+@@ -862,6 +864,11 @@ internal fun DesktopHoverSidebar(
+                     selected = selectedTab == AppScreenTab.Settings,
+                     expanded = sidebarExpanded,
+                     onClick = { selectTab(AppScreenTab.Settings) },
++                    modifier = Modifier.focusProperties {
++                        if (selectedTab == AppScreenTab.Settings) {
++                            SettingsFocusLinks.categoryEntry?.let { right = it }
++                        }
++                    },
+                 ) { color ->
+                     Icon(
+                         imageVector = Icons.Rounded.Settings,
+@@ -941,6 +948,7 @@ private fun DesktopSidebarItem(
+     selected: Boolean,
+     expanded: Boolean,
+     onClick: () -> Unit,
++    modifier: Modifier = Modifier,
+     icon: @Composable (Color) -> Unit,
+ ) {
+     val tokens = MaterialTheme.nuvio
+@@ -949,7 +957,7 @@ private fun DesktopSidebarItem(
+ 
+     Surface(
+         onClick = onClick,
+-        modifier = Modifier
++        modifier = modifier
+             .fillMaxWidth()
+             .height(DesktopSidebarItemHeight)
+             .padding(horizontal = 6.dp, vertical = 4.dp)
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/MainAppContent.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/MainAppContent.kt
+index ddca057..50c6548 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/MainAppContent.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/MainAppContent.kt
+@@ -8,8 +8,10 @@ import androidx.compose.animation.fadeIn
+ import androidx.compose.animation.fadeOut
+ import androidx.compose.animation.togetherWith
+ import androidx.compose.foundation.background
++import androidx.compose.foundation.focusable
+ import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.size
+ import androidx.compose.foundation.lazy.rememberLazyListState
+ import androidx.compose.material.icons.Icons
+ import androidx.compose.material.icons.filled.Add
+@@ -37,6 +39,11 @@ import androidx.compose.runtime.withFrameNanos
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.focus.FocusDirection
++import androidx.compose.ui.focus.FocusRequester
++import androidx.compose.ui.focus.focusProperties
++import androidx.compose.ui.focus.focusRequester
++import androidx.compose.ui.focus.onFocusChanged
++import androidx.compose.ui.geometry.Rect
+ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+ import androidx.compose.ui.input.key.Key
+ import androidx.compose.ui.input.key.KeyEventType
+@@ -46,6 +53,7 @@ import androidx.compose.ui.input.key.type
+ import androidx.compose.ui.platform.LocalFocusManager
+ import androidx.compose.ui.platform.LocalHapticFeedback
+ import androidx.compose.ui.platform.LocalUriHandler
++import androidx.compose.ui.unit.dp
+ import androidx.compose.ui.zIndex
+ import androidx.lifecycle.compose.collectAsStateWithLifecycle
+ import androidx.navigation3.runtime.NavKey
+@@ -80,12 +88,14 @@ import com.nuvio.app.core.ui.NuvioPosterZoomActionOverlay
+ import com.nuvio.app.core.ui.NuvioStatusModal
+ import com.nuvio.app.core.ui.NuvioToastController
+ import com.nuvio.app.core.ui.NuvioToastHost
++import com.nuvio.app.core.ui.PlatformFocusPresence
+ import com.nuvio.app.core.ui.PlatformTextInputState
+ import com.nuvio.app.core.ui.PosterZoomAnchor
+ import com.nuvio.app.core.ui.PosterZoomAnchorHolder
+ import com.nuvio.app.core.ui.PosterZoomOverlayAction
+ import com.nuvio.app.core.ui.PosterZoomOverlayExitAnimation
+ import com.nuvio.app.core.ui.TrackingListPickerDialog
++import com.nuvio.app.core.ui.focusPresenceMonitor
+ import com.nuvio.app.core.ui.isLiquidGlassNativeTabBarSupported
+ import com.nuvio.app.core.ui.localizedContinueWatchingSubtitle
+ import com.nuvio.app.core.ui.nuvio
+@@ -245,6 +255,7 @@ internal fun MainAppContent(
+         val appUpdaterController = rememberAppUpdaterController()
+         val hapticFeedback = LocalHapticFeedback.current
+         val focusManager = LocalFocusManager.current
++        val rootFocusAnchor = remember { FocusRequester() }
+         val uriHandler = LocalUriHandler.current
+         val coroutineScope = rememberCoroutineScope()
+         var selectedTab by rememberSaveable(initialTab) { mutableStateOf(initialTab) }
+@@ -275,6 +286,14 @@ internal fun MainAppContent(
+         DisposableEffect(posterNavigation) {
+             onDispose { posterNavigation.clear() }
+         }
++        // Focus recovery: when nothing in the main scene holds focus (e.g. after
++        // navigating into a subpage clears it), park focus on the off-screen root
++        // anchor so hardware Esc/B keeps working. The anchor's far focusRect keeps
++        // it out of every 2D search, so normal navigation is unaffected.
++        val anyFocus = PlatformFocusPresence.hasFocus
++        LaunchedEffect(anyFocus) {
++            if (!anyFocus) rootFocusAnchor.requestFocus()
++        }
+         val liquidGlassNativeTabBarEnabled by remember {
+             ThemeSettingsRepository.liquidGlassNativeTabBarEnabled
+         }.collectAsStateWithLifecycle()
+@@ -1251,6 +1270,7 @@ internal fun MainAppContent(
+                 modifier = Modifier
+                     .fillMaxSize()
+                     .background(MaterialTheme.nuvio.colors.background)
++                    .focusPresenceMonitor()
+                     .onKeyEvent { event ->
+                         if (event.type == KeyEventType.KeyDown && event.key == Key.Escape) {
+                             if (PlatformTextInputState.isActive) {
+@@ -2102,6 +2122,16 @@ internal fun MainAppContent(
+                     .zIndex(20f),
+             )
+ 
++            Box(
++                Modifier
++                    .size(0.dp)
++                    .focusProperties { focusRect = Rect(10_000f, 10_000f, 10_000f, 10_000f) }
++                    .onFocusChanged { PlatformFocusPresence.anchorActive = it.isFocused }
++                    .focusRequester(rootFocusAnchor)
++                    .focusable(),
++            ) {
++            }
++
+             }
+         }
+ }
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/PlatformFocusPresence.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/PlatformFocusPresence.kt
+new file mode 100644
+index 0000000..55c0577
+--- /dev/null
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/PlatformFocusPresence.kt
+@@ -0,0 +1,39 @@
++package com.nuvio.app.core.ui
++
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.mutableStateOf
++import androidx.compose.runtime.setValue
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.focus.FocusTargetModifierNode
++import androidx.compose.ui.focus.Focusability
++import androidx.compose.ui.node.DelegatingNode
++import androidx.compose.ui.node.ModifierNodeElement
++import androidx.compose.ui.platform.InspectorInfo
++
++/** cwrneirOS: main-scene focus presence + recovery-anchor state (see PlatformKeyboardNavigation). */
++internal object PlatformFocusPresence {
++    /** True while any focus target in the main scene holds focus (Compose state so effects react). */
++    var hasFocus by mutableStateOf(false)
++    /** True while the recovery anchor itself is focused (read by the AWT dispatcher). */
++    var anchorActive: Boolean = false
++}
++
++internal fun Modifier.focusPresenceMonitor(): Modifier = this then FocusPresenceElement
++
++private object FocusPresenceElement : ModifierNodeElement<FocusPresenceNode>() {
++    override fun create() = FocusPresenceNode()
++    override fun update(node: FocusPresenceNode) {}
++    override fun equals(other: Any?) = other === this
++    override fun hashCode() = 0x5A17
++    override fun InspectorInfo.inspectableProperties() { name = "focusPresenceMonitor" }
++}
++
++private class FocusPresenceNode : DelegatingNode() {
++    init {
++        delegate(
++            FocusTargetModifierNode(focusability = Focusability.Never) { _, current ->
++                PlatformFocusPresence.hasFocus = current.hasFocus
++            },
++        )
++    }
++}
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/SettingsFocusLinks.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/SettingsFocusLinks.kt
+new file mode 100644
+index 0000000..f2a8829
+--- /dev/null
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/SettingsFocusLinks.kt
+@@ -0,0 +1,9 @@
++package com.nuvio.app.core.ui
++
++import androidx.compose.ui.focus.FocusRequester
++
++/** cwrneirOS: focus-graph bridge between the app rail, the settings category column and its content. */
++internal object SettingsFocusLinks {
++    var categoryEntry: FocusRequester? = null
++    var contentEntry: FocusRequester? = null
++}
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/profiles/AvatarPicker.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/profiles/AvatarPicker.kt
+index d262fe4..2bb782e 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/profiles/AvatarPicker.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/profiles/AvatarPicker.kt
+@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
+ import androidx.compose.ui.layout.ContentScale
+ import androidx.compose.ui.unit.dp
+ import coil3.compose.AsyncImage
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ 
+ @Composable
+ internal fun AvatarPicker(
+@@ -66,6 +67,7 @@ private fun AvatarChoiceItem(
+ ) {
+     Box(
+         modifier = modifier
++            .nuvioFocusBorder(CircleShape)
+             .clip(CircleShape)
+             .background(
+                 avatar.bgColor?.let(::parseHexColor)
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/profiles/ProfileSelectionScreen.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/profiles/ProfileSelectionScreen.kt
+index 922ccc3..91dd53d 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/profiles/ProfileSelectionScreen.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/profiles/ProfileSelectionScreen.kt
+@@ -294,6 +294,7 @@ fun ProfileSelectionScreen(
+                 Box(
+                     modifier = Modifier
+                         .graphicsLayer { alpha = manageAlpha.value }
++                        .nuvioFocusBorder(RoundedCornerShape(24.dp))
+                         .clip(RoundedCornerShape(24.dp))
+                         .background(
+                             if (isEditMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt
+index c360867..9c90a0e 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt
+@@ -39,6 +39,8 @@ import androidx.compose.runtime.Composable
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.draw.alpha
++import androidx.compose.ui.focus.FocusRequester
++import androidx.compose.ui.focus.focusRequester
+ import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.graphics.painter.Painter
+ import androidx.compose.ui.graphics.vector.ImageVector
+@@ -120,6 +122,7 @@ internal fun TabletPageHeader(
+     title: String,
+     showBack: Boolean,
+     onBack: () -> Unit,
++    backFocusRequester: FocusRequester? = null,
+ ) {
+     val tokens = MaterialTheme.nuvio
+     Box(
+@@ -139,7 +142,14 @@ internal fun TabletPageHeader(
+                 NuvioBackButton(
+                     onClick = onBack,
+                     modifier = Modifier
+-                        .size(36.dp),
++                        .size(36.dp)
++                        .then(
++                            if (backFocusRequester != null) {
++                                Modifier.focusRequester(backFocusRequester)
++                            } else {
++                                Modifier
++                            },
++                        ),
+                     shape = tokens.shapes.compactCard,
+                     containerColor = tokens.colors.surface,
+                     contentColor = tokens.colors.textPrimary,
+@@ -163,6 +173,7 @@ internal fun SettingsSidebarItem(
+     icon: ImageVector,
+     selected: Boolean,
+     onClick: () -> Unit,
++    modifier: Modifier = Modifier,
+ ) {
+     val tokens = MaterialTheme.nuvio
+     val primary = tokens.colors.accent
+@@ -172,7 +183,7 @@ internal fun SettingsSidebarItem(
+ 
+     val sidebarItemShape = RoundedCornerShape(NuvioTokens.Space.s10)
+     Row(
+-        modifier = Modifier
++        modifier = modifier
+             .fillMaxWidth()
+             .padding(horizontal = tokens.spacing.listGap, vertical = NuvioTokens.Space.s2)
+             .background(background, sidebarItemShape)
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt
+index 5c5ce81..0995902 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt
+@@ -33,6 +33,7 @@ import androidx.compose.foundation.gestures.stopScroll
+ import com.nuvio.app.core.ui.LocalScreenActive
+ import com.nuvio.app.core.ui.ScreenActivityEffect
+ import androidx.compose.runtime.LaunchedEffect
++import androidx.compose.runtime.DisposableEffect
+ import androidx.compose.runtime.getValue
+ import androidx.compose.runtime.mutableStateOf
+ import androidx.compose.runtime.remember
+@@ -42,7 +43,13 @@ import androidx.compose.runtime.setValue
+ import androidx.compose.runtime.saveable.rememberSaveable
+ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+ import androidx.compose.runtime.snapshotFlow
++import androidx.compose.runtime.withFrameNanos
+ import androidx.compose.ui.geometry.Offset
++import androidx.compose.ui.focus.FocusDirection
++import androidx.compose.ui.focus.FocusRequester
++import androidx.compose.foundation.focusGroup
++import androidx.compose.ui.focus.focusProperties
++import androidx.compose.ui.focus.focusRequester
+ import androidx.compose.ui.unit.Dp
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+@@ -63,6 +70,9 @@ import com.nuvio.app.core.ui.NuvioDesktopVerticalScrollbar
+ import com.nuvio.app.core.ui.NuvioScreen
+ import com.nuvio.app.core.ui.NuvioScreenHeader
+ import com.nuvio.app.core.ui.PlatformBackHandler
++import com.nuvio.app.core.ui.SettingsFocusLinks
++import com.nuvio.app.navigation.LocalNativeNavigationBarHidden
++import com.nuvio.app.navigation.LocalUseNativeNavigation
+ import com.nuvio.app.core.ui.isLiquidGlassNativeTabBarSupported
+ import com.nuvio.app.features.addons.AddonRepository
+ import com.nuvio.app.features.details.MetaScreenSettingsRepository
+@@ -949,12 +959,43 @@ private fun TabletSettingsScreen(
+ 
+     val navBarScrollState = LocalNuvioNavBarScrollState.current
+ 
++    val categoryEntryRequester = remember { FocusRequester() }
++    val contentEntryRequester = remember { FocusRequester() }
++    val backRequester = remember { FocusRequester() }
++    val focusRequestScope = rememberCoroutineScope()
++    val useNativeNavigation = LocalUseNativeNavigation.current
++    val nativeNavigationBarHidden = LocalNativeNavigationBarHidden.current
++
++    DisposableEffect(Unit) {
++        SettingsFocusLinks.categoryEntry = categoryEntryRequester
++        SettingsFocusLinks.contentEntry = contentEntryRequester
++        onDispose {
++            if (SettingsFocusLinks.categoryEntry === categoryEntryRequester) SettingsFocusLinks.categoryEntry = null
++            if (SettingsFocusLinks.contentEntry === contentEntryRequester) SettingsFocusLinks.contentEntry = null
++        }
++    }
++
+     LaunchedEffect(page) {
+         if (page.opensInlineOnTablet) {
+             selectedCategory = page.category.name
+         }
+     }
+ 
++    var lastPage by remember { mutableStateOf(page) }
++    LaunchedEffect(page) {
++        val from = lastPage
++        lastPage = page
++        if (page == from) return@LaunchedEffect
++        withFrameNanos { }
++        val internalBackAvailable = showInternalHeader &&
++            !(useNativeNavigation && !nativeNavigationBarHidden)
++        if (page != SettingsPage.Root && internalBackAvailable) {
++            backRequester.requestFocus()
++        } else {
++            SettingsFocusLinks.categoryEntry?.requestFocus()
++        }
++    }
++
+     fun openInlinePage(page: SettingsPage) {
+         selectedCategory = page.category.name
+         navBarScrollState?.expand()
+@@ -1000,7 +1041,18 @@ private fun TabletSettingsScreen(
+                                     onPageChange(SettingsPage.Root)
+                                 }
+                             }
++                            focusRequestScope.launch {
++                                withFrameNanos { }
++                                SettingsFocusLinks.contentEntry?.requestFocus(FocusDirection.Down)
++                            }
+                         },
++                        modifier = Modifier
++                            .focusProperties {
++                                if (category == SettingsCategory.entries.first()) up = FocusRequester.Cancel
++                                if (category == SettingsCategory.entries.last()) down = FocusRequester.Cancel
++                                SettingsFocusLinks.contentEntry?.let { right = it }
++                            }
++                            .then(if (category == activeCategory) Modifier.focusRequester(categoryEntryRequester) else Modifier),
+                     )
+                 }
+             }
+@@ -1084,7 +1136,9 @@ private fun TabletSettingsScreen(
+                         .align(Alignment.CenterHorizontally)
+                         .widthIn(max = if (isDesktop) 800.dp else Dp.Unspecified)
+                         .fillMaxWidth()
+-                        .weight(1f),
++                        .weight(1f)
++                        .focusRequester(contentEntryRequester)
++                        .focusGroup(),
+                 ) {
+                     LazyColumn(
+                         state = listState,
+@@ -1114,6 +1168,7 @@ private fun TabletSettingsScreen(
+                                     },
+                                     showBack = previousPage != null,
+                                     onBack = { if (previousPage != null) onNavigateBack() },
++                                    backFocusRequester = backRequester,
+                                 )
+                             }
+                         }
+diff --git a/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/PlatformKeyboardNavigation.desktop.kt b/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/PlatformKeyboardNavigation.desktop.kt
+index 25a9aab..28a278d 100644
+--- a/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/PlatformKeyboardNavigation.desktop.kt
++++ b/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/PlatformKeyboardNavigation.desktop.kt
+@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
+ import androidx.compose.runtime.DisposableEffect
+ import androidx.compose.ui.focus.FocusDirection
+ import androidx.compose.ui.platform.LocalFocusManager
++import com.nuvio.app.core.ui.PlatformFocusPresence
+ import java.awt.Component
+ import java.awt.Container
+ import java.awt.KeyEventDispatcher
+@@ -41,16 +42,25 @@ actual fun PlatformKeyboardNavigation() {
+                     if (DesktopTextInputState.isMultilineActive) return@KeyEventDispatcher false
+             }
+ 
+-            val moved = when (key) {
+-                KeyEvent.VK_LEFT -> focusManager.moveFocus(FocusDirection.Left)
+-                KeyEvent.VK_RIGHT -> focusManager.moveFocus(FocusDirection.Right)
+-                KeyEvent.VK_UP -> focusManager.moveFocus(FocusDirection.Up)
+-                KeyEvent.VK_DOWN -> focusManager.moveFocus(FocusDirection.Down)
++            val direction = when (key) {
++                KeyEvent.VK_LEFT -> FocusDirection.Left
++                KeyEvent.VK_RIGHT -> FocusDirection.Right
++                KeyEvent.VK_UP -> FocusDirection.Up
++                KeyEvent.VK_DOWN -> FocusDirection.Down
+                 else -> return@KeyEventDispatcher false
+             }
++            var moved = focusManager.moveFocus(direction)
++            if (!moved && PlatformFocusPresence.anchorActive) {
++                // The anchor's far focusRect makes normal 2D search fail while it
++                // is focused; clearing focus restores the usual root-anchored
++                // search for one retry.
++                focusManager.clearFocus(force = true)
++                moved = focusManager.moveFocus(direction)
++            }
+             println(
+                 "nuvio-nav: key=$key moved=$moved text=${DesktopTextInputState.isActive} " +
+-                    "ml=${DesktopTextInputState.isMultilineActive}",
++                    "ml=${DesktopTextInputState.isMultilineActive} focus=${PlatformFocusPresence.hasFocus} " +
++                    "anchor=${PlatformFocusPresence.anchorActive}",
+             )
+             true
+         }

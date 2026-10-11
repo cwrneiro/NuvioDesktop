@@ -1,0 +1,338 @@
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt
+index 820c144..e1b0d64 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt
+@@ -67,6 +67,7 @@ import com.nuvio.app.core.ui.NuvioLoadingIndicator
+ import com.nuvio.app.core.ui.NuvioNavBarScrollState
+ import com.nuvio.app.core.ui.NuvioTokens
+ import com.nuvio.app.core.ui.nuvio
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.features.cloud.CloudLibraryContentType
+ import com.nuvio.app.features.cloud.CloudLibraryFile
+ import com.nuvio.app.features.cloud.CloudLibraryItem
+@@ -781,6 +782,7 @@ internal fun DesktopHoverSidebar(
+                     .fillMaxWidth()
+                     .height(DesktopSidebarItemHeight)
+                     .padding(horizontal = 6.dp, vertical = 4.dp)
++                    .nuvioFocusBorder(RoundedCornerShape(16.dp))
+                     .clickable(
+                         interactionSource = remember { MutableInteractionSource() },
+                         indication = null,
+@@ -950,7 +952,8 @@ private fun DesktopSidebarItem(
+         modifier = Modifier
+             .fillMaxWidth()
+             .height(DesktopSidebarItemHeight)
+-            .padding(horizontal = 6.dp, vertical = 4.dp),
++            .padding(horizontal = 6.dp, vertical = 4.dp)
++            .nuvioFocusBorder(RoundedCornerShape(16.dp)),
+         color = Color.Transparent,
+         shape = RoundedCornerShape(16.dp),
+     ) {
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/NuvioFocusable.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/NuvioFocusable.kt
+index c665dde..dfa38d1 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/NuvioFocusable.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/NuvioFocusable.kt
+@@ -1,6 +1,5 @@
+ package com.nuvio.app.core.ui
+ 
+-import androidx.compose.foundation.border
+ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.runtime.getValue
+ import androidx.compose.runtime.mutableStateOf
+@@ -8,20 +7,43 @@ import androidx.compose.runtime.remember
+ import androidx.compose.runtime.setValue
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.composed
++import androidx.compose.ui.draw.drawBehind
+ import androidx.compose.ui.focus.onFocusChanged
++import androidx.compose.ui.geometry.Size
+ import androidx.compose.ui.graphics.Shape
++import androidx.compose.ui.graphics.drawOutline
++import androidx.compose.ui.graphics.drawscope.Stroke
++import androidx.compose.ui.graphics.drawscope.translate
+ import androidx.compose.ui.unit.Dp
+ import androidx.compose.ui.unit.dp
+ 
+-// cwrneirOS fix (2026-10-05, hardware feedback on the rebased PR #180): do NOT
+-// add Modifier.focusable() here. Every element this modifier is applied to is
+-// already clickable, and clickable() provides its own focusable node — adding
+-// a second one meant each item had TWO focus targets: arrows stepped through
+-// both (every other press looked dead / "janky"), focus sometimes landed on
+-// the bare focusable node where Enter/A has no click semantics ("A doesn't
+-// always select"), and the visible indication alternated between this ring
+-// and the item's own subtle focused/hover tint. Observing focus and drawing
+-// the ring is this modifier's whole job; focusability comes from clickable().
++/**
++ * Couch-legible focus ring, drawn as an OUTSET stroke around the node.
++ *
++ * cwrneirOS fix (2026-10-05, hardware feedback on the rebased PR #180): do NOT
++ * add Modifier.focusable() here. Every element this modifier is applied to is
++ * already clickable, and clickable() provides its own focusable node — adding
++ * a second one meant each item had TWO focus targets: arrows stepped through
++ * both (every other press looked dead / "janky"), focus sometimes landed on
++ * the bare focusable node where Enter/A has no click semantics ("A doesn't
++ * always select"), and the visible indication alternated between this ring
++ * and the item's own subtle focused/hover tint. Observing focus and drawing
++ * the ring is this modifier's whole job; focusability comes from clickable().
++ * (This rationale is hardware-verified — do not regress it.)
++ *
++ * Focus is observed via [onFocusChanged] with `hasFocus`, NOT `isFocused`:
++ * `isFocused` is true only when this exact node is the focus target, while
++ * `hasFocus` is also true for ancestors containing the focused descendant
++ * (ActiveParent) — wrappers around clickable/selectable children must ring too.
++ *
++ * Placement rule: apply this modifier BEFORE any `.clip(...)` / shape clip in
++ * the chain. The ring is drawn outside the node bounds (inflated by
++ * `borderWidth / 2 + 1dp`), so an ancestor clip earlier (outer) in the chain
++ * would cut it — with a tight same-shape clip the whole ring disappears. It
++ * must likewise sit before the `clickable`/`selectable`/`combinedClickable`
++ * whose focus target it observes (onFocusChanged observes the first focus
++ * target AFTER itself).
++ */
+ fun Modifier.nuvioFocusBorder(
+     shape: Shape,
+     borderWidth: Dp = 3.dp,
+@@ -29,12 +51,21 @@ fun Modifier.nuvioFocusBorder(
+     var focused by remember { mutableStateOf(false) }
+     val tokens = MaterialTheme.nuvio
+     this
+-        .onFocusChanged { focused = it.isFocused }
+-        .then(
+-            if (focused) Modifier.border(
+-                width = borderWidth,
+-                color = tokens.colors.focusRing,
+-                shape = shape,
+-            ) else Modifier,
+-        )
++        .onFocusChanged { focused = it.hasFocus }
++        .drawBehind {
++            if (!focused) return@drawBehind
++            val inflate = borderWidth.toPx() / 2f + 1.dp.toPx()
++            val outline = shape.createOutline(
++                Size(size.width + 2 * inflate, size.height + 2 * inflate),
++                layoutDirection,
++                this,
++            )
++            translate(-inflate, -inflate) {
++                drawOutline(
++                    outline = outline,
++                    color = tokens.colors.focusRing,
++                    style = Stroke(width = borderWidth.toPx()),
++                )
++            }
++        }
+ }
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/ShelfComponents.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/ShelfComponents.kt
+index 79839db..1dc3bb0 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/ShelfComponents.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/ShelfComponents.kt
+@@ -266,13 +266,13 @@ fun NuvioPosterCard(
+             modifier = Modifier
+                 .fillMaxWidth()
+                 .aspectRatio(shape.aspectRatio)
++                .nuvioFocusBorder(cardShape)
+                 .clip(cardShape)
+                 .background(tokens.colors.surface)
+                 .nuvioCardDepth(
+                     shape = cardShape,
+                     surface = NuvioCardDepthSurface.Posters,
+                 )
+-                .nuvioFocusBorder(cardShape)
+                 .posterCardClickable(
+                     onClick = onClick,
+                     onLongClick = onLongClick,
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/jelly/JellyTabs.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/jelly/JellyTabs.kt
+index 028d7d7..1d91cb4 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/jelly/JellyTabs.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/jelly/JellyTabs.kt
+@@ -15,6 +15,7 @@ import kotlin.math.roundToInt
+ import androidx.compose.foundation.layout.size
+ import androidx.compose.foundation.selection.selectable
+ import androidx.compose.foundation.selection.selectableGroup
++import androidx.compose.foundation.shape.RoundedCornerShape
+ import androidx.compose.material3.Icon
+ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.Text
+@@ -43,6 +44,7 @@ import com.nuvio.app.core.ui.FloatingNavigationItem
+ import com.nuvio.app.core.ui.accentBrush
+ import com.nuvio.app.core.ui.gradientMask
+ import com.nuvio.app.core.ui.nuvio
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.core.ui.themePalette
+ import com.nuvio.app.core.ui.visualNavIndex
+ import org.jetbrains.compose.resources.painterResource
+@@ -109,6 +111,7 @@ internal fun JellyTabTargets(
+             }
+             Box(
+                 modifier = Modifier.weight(1f).fillMaxHeight()
++                    .nuvioFocusBorder(RoundedCornerShape(50))
+                     .selectable(
+                         selected = item.selected,
+                         role = Role.Tab,
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/details/components/DetailCastSection.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/details/components/DetailCastSection.kt
+index 50b0bc5..11a3ed4 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/details/components/DetailCastSection.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/details/components/DetailCastSection.kt
+@@ -167,6 +167,7 @@ private fun CastItem(
+             modifier = Modifier
+                 .then(avatarSharedElementModifier)
+                 .size(sizing.avatarSize)
++                .nuvioFocusBorder(CircleShape)
+                 .clip(CircleShape)
+                 .background(
+                     color = MaterialTheme.colorScheme.surfaceVariant,
+@@ -175,8 +176,7 @@ private fun CastItem(
+                 .nuvioCardDepth(
+                     shape = CircleShape,
+                     surface = NuvioCardDepthSurface.Cast,
+-                )
+-                .nuvioFocusBorder(CircleShape),
++                ),
+             contentAlignment = Alignment.Center,
+         ) {
+             if (person.photo != null) {
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/details/components/DetailSeriesContent.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/details/components/DetailSeriesContent.kt
+index 78cf457..50b3d8a 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/details/components/DetailSeriesContent.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/details/components/DetailSeriesContent.kt
+@@ -529,6 +529,7 @@ private fun SeasonTextChipScrollRow(
+             val chipShape = RoundedCornerShape(sizing.seasonChipRadius)
+             Box(
+                 modifier = Modifier
++                    .nuvioFocusBorder(chipShape)
+                     .clip(chipShape)
+                     .background(
+                         if (isSelected) {
+@@ -537,7 +538,6 @@ private fun SeasonTextChipScrollRow(
+                             Color.Transparent
+                         },
+                     )
+-                    .nuvioFocusBorder(chipShape)
+                     .combinedClickable(
+                         onClick = { onSelect(season) },
+                         onLongClick = onSecondaryClick,
+@@ -825,6 +825,7 @@ private fun EpisodeHorizontalCard(
+         modifier = Modifier
+             .width(metrics.cardWidth)
+             .height(metrics.cardHeight)
++            .nuvioFocusBorder(cardShape)
+             .clip(cardShape)
+             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+             .nuvioCardDepth(
+@@ -832,7 +833,6 @@ private fun EpisodeHorizontalCard(
+                 surface = NuvioCardDepthSurface.EpisodeCards,
+                 fallbackBorderAlpha = 0.12f,
+             )
+-            .nuvioFocusBorder(cardShape)
+             .posterCardClickable(
+                 onClick = onClick,
+                 onLongClick = onLongPress,
+@@ -1203,6 +1203,7 @@ private fun EpisodeListCard(
+         modifier = modifier
+             .fillMaxWidth()
+             .height(sizing.cardHeight)
++            .nuvioFocusBorder(cardShape)
+             .clip(cardShape)
+             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+             .border(
+@@ -1210,7 +1211,6 @@ private fun EpisodeListCard(
+                 color = Color.White.copy(alpha = 0.1f),
+                 shape = cardShape,
+             )
+-            .nuvioFocusBorder(cardShape)
+             .combinedClickable(
+                 enabled = onClick != null || onLongPress != null,
+                 onClick = { onClick?.invoke() },
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/profiles/ProfileSelectionScreen.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/profiles/ProfileSelectionScreen.kt
+index 8cffac4..922ccc3 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/profiles/ProfileSelectionScreen.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/profiles/ProfileSelectionScreen.kt
+@@ -414,6 +414,7 @@ private fun ProfileAvatarCard(
+                 scaleY = animScale.value * pressScale
+                 translationY = animOffset.value
+             }
++            .nuvioFocusBorder(profileShape)
+             .clip(profileShape)
+             .then(
+                 if (isDesktop) {
+@@ -422,7 +423,6 @@ private fun ProfileAvatarCard(
+                     Modifier
+                 },
+             )
+-            .nuvioFocusBorder(profileShape)
+             .clickable(
+                 enabled = enabled,
+                 interactionSource = interactionSource,
+@@ -573,8 +573,8 @@ private fun AddProfileCard(
+                 scaleY = animScale.value * pressScale
+                 translationY = animOffset.value
+             }
+-            .clip(addProfileShape)
+             .nuvioFocusBorder(addProfileShape)
++            .clip(addProfileShape)
+             .clickable(
+                 enabled = enabled,
+                 interactionSource = interactionSource,
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/profiles/ProfileSwitcherTab.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/profiles/ProfileSwitcherTab.kt
+index 72c2822..30f739a 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/profiles/ProfileSwitcherTab.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/profiles/ProfileSwitcherTab.kt
+@@ -87,6 +87,7 @@ import dev.chrisbanes.haze.hazeEffect
+ import com.nuvio.app.core.ui.NuvioAsyncImage as AsyncImage
+ import com.nuvio.app.core.ui.NuvioTokens
+ import com.nuvio.app.core.ui.nuvio
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import dev.chrisbanes.haze.HazeState
+ import com.nuvio.app.isIos
+ import kotlinx.coroutines.delay
+@@ -416,6 +417,7 @@ private fun SidebarProfileSwitcherRow(
+         modifier = Modifier
+             .fillMaxWidth()
+             .height(40.dp)
++            .nuvioFocusBorder(tokens.shapes.compactCard)
+             .clip(tokens.shapes.compactCard)
+             .background(
+                 if (isActive) {
+@@ -471,6 +473,7 @@ private fun SidebarAddProfileRow(
+         modifier = Modifier
+             .fillMaxWidth()
+             .height(40.dp)
++            .nuvioFocusBorder(tokens.shapes.compactCard)
+             .clip(tokens.shapes.compactCard)
+             .clickable(onClick = onClick)
+             .padding(horizontal = 8.dp),
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/streams/ProviderFilterRow.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/streams/ProviderFilterRow.kt
+index 5ac95b2..ada699c 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/streams/ProviderFilterRow.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/streams/ProviderFilterRow.kt
+@@ -133,9 +133,9 @@ private fun FilterChip(
+                 scaleY = scale
+             }
+             .height(36.dp)
++            .nuvioFocusBorder(chipShape)
+             .clip(chipShape)
+             .background(containerColor)
+-            .nuvioFocusBorder(chipShape)
+             .clickable(
+                 interactionSource = interactionSource,
+                 indication = null,
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/streams/StreamCard.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/streams/StreamCard.kt
+index d4c0d53..e25e55b 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/streams/StreamCard.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/streams/StreamCard.kt
+@@ -82,6 +82,7 @@ internal fun StreamCard(
+                 ambientColor = Color.Black.copy(alpha = 0.04f),
+                 spotColor = Color.Black.copy(alpha = 0.04f),
+             )
++            .nuvioFocusBorder(cardShape)
+             .clip(cardShape)
+             .background(
+                 if (isCurrent) {
+@@ -101,7 +102,6 @@ internal fun StreamCard(
+                     Modifier
+                 },
+             )
+-            .nuvioFocusBorder(cardShape)
+             .then(
+                 if (isDesktop) {
+                     Modifier.onGloballyPositioned { coordinates ->

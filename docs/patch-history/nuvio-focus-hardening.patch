@@ -1,0 +1,404 @@
+diff --git a/composeApp/src/androidMain/kotlin/com/nuvio/app/core/ui/TextInputTracker.android.kt b/composeApp/src/androidMain/kotlin/com/nuvio/app/core/ui/TextInputTracker.android.kt
+index a3f8a1d..301f96a 100644
+--- a/composeApp/src/androidMain/kotlin/com/nuvio/app/core/ui/TextInputTracker.android.kt
++++ b/composeApp/src/androidMain/kotlin/com/nuvio/app/core/ui/TextInputTracker.android.kt
+@@ -2,4 +2,4 @@ package com.nuvio.app.core.ui
+ 
+ import androidx.compose.ui.Modifier
+ 
+-actual fun Modifier.nuvioTracksTextInput(): Modifier = this
++actual fun Modifier.nuvioTracksTextInput(singleLine: Boolean): Modifier = this
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/MainAppContent.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/MainAppContent.kt
+index 7a509ed..ddca057 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/MainAppContent.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/MainAppContent.kt
+@@ -36,6 +36,7 @@ import androidx.compose.runtime.snapshotFlow
+ import androidx.compose.runtime.withFrameNanos
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
++import androidx.compose.ui.focus.FocusDirection
+ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+ import androidx.compose.ui.input.key.Key
+ import androidx.compose.ui.input.key.KeyEventType
+@@ -79,6 +80,7 @@ import com.nuvio.app.core.ui.NuvioPosterZoomActionOverlay
+ import com.nuvio.app.core.ui.NuvioStatusModal
+ import com.nuvio.app.core.ui.NuvioToastController
+ import com.nuvio.app.core.ui.NuvioToastHost
++import com.nuvio.app.core.ui.PlatformTextInputState
+ import com.nuvio.app.core.ui.PosterZoomAnchor
+ import com.nuvio.app.core.ui.PosterZoomAnchorHolder
+ import com.nuvio.app.core.ui.PosterZoomOverlayAction
+@@ -1251,10 +1253,19 @@ internal fun MainAppContent(
+                     .background(MaterialTheme.nuvio.colors.background)
+                     .onKeyEvent { event ->
+                         if (event.type == KeyEventType.KeyDown && event.key == Key.Escape) {
+-                            if (!PlatformBackDispatcher.dispatch()) {
+-                                navController.popBackStack()
++                            if (PlatformTextInputState.isActive) {
++                                // Esc leaves a focused text field before it can
++                                // trigger back navigation.
++                                if (!focusManager.moveFocus(FocusDirection.Previous)) {
++                                    focusManager.clearFocus(force = true)
++                                }
++                                true
++                            } else {
++                                if (!PlatformBackDispatcher.dispatch()) {
++                                    navController.popBackStack()
++                                }
++                                true
+                             }
+-                            true
+                         } else {
+                             false
+                         }
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/RootTabHost.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/RootTabHost.kt
+index 0b1f0b5..cf81b57 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/RootTabHost.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/RootTabHost.kt
+@@ -36,7 +36,12 @@ internal fun RootTabHost(
+     val parentLifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
+     val hostActive = active && parentLifecycleState.isAtLeast(Lifecycle.State.STARTED)
+     val focusManager = LocalFocusManager.current
+-    DisposableEffect(selectedTab, hostActive, profileId) {
++    // Tab changes must not clear focus: RootTabPane's `focusProperties { canFocus = active }`
++    // already clears focus inside a deactivated pane; the eager clear left focus nowhere,
++    // which on hardware made the ring vanish after selecting Settings, made arrows/Tab behave
++    // inconsistently, and made B/Esc be dropped until an arrow re-established focus.
++    // Keep the clear for profile switch/host disposal.
++    DisposableEffect(profileId) {
+         onDispose { focusManager.clearFocus(force = true) }
+     }
+ 
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/Components.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/Components.kt
+index 804c0c1..2a7b183 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/Components.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/Components.kt
+@@ -192,7 +192,10 @@ fun NuvioScreenHeader(
+                 horizontalArrangement = Arrangement.spacedBy(tokens.spacing.controlGap),
+             ) {
+                 if (onBack != null) {
+-                    IconButton(onClick = onBack) {
++                    IconButton(
++                        onClick = onBack,
++                        modifier = Modifier.nuvioFocusBorder(tokens.shapes.avatar),
++                    ) {
+                         Icon(
+                             imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                             contentDescription = stringResource(Res.string.action_back),
+@@ -251,7 +254,9 @@ fun NuvioActionLabel(
+         text = text,
+         modifier = modifier.then(
+             if (onClick != null) {
+-                Modifier.clickable(onClick = onClick)
++                Modifier
++                    .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4))
++                    .clickable(onClick = onClick)
+             } else {
+                 Modifier
+             }
+@@ -272,6 +277,7 @@ fun NuvioIconActionButton(
+     val tokens = MaterialTheme.nuvio
+     IconButton(
+         modifier = modifier
++            .nuvioFocusBorder(tokens.shapes.avatar)
+             .background(
+                 color = tokens.colors.background.copy(alpha = 0.001f),
+                 shape = tokens.shapes.avatar,
+@@ -304,6 +310,7 @@ fun NuvioBackButton(
+     Box(
+         modifier = modifier
+             .size(buttonSize)
++            .nuvioFocusBorder(shape)
+             .clip(shape)
+             .background(effectiveContainerColor)
+             .clickable(onClick = onClick),
+@@ -330,7 +337,8 @@ fun NuvioPrimaryButton(
+         onClick = onClick,
+         modifier = modifier
+             .fillMaxWidth()
+-            .height(NuvioTokens.Space.s48 + NuvioTokens.Space.s4),
++            .height(NuvioTokens.Space.s48 + NuvioTokens.Space.s4)
++            .nuvioFocusBorder(tokens.shapes.button),
+         enabled = enabled,
+         shape = tokens.shapes.button,
+         colors = ButtonDefaults.buttonColors(
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/PlatformTextInputState.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/PlatformTextInputState.kt
+new file mode 100644
+index 0000000..c962e0b
+--- /dev/null
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/PlatformTextInputState.kt
+@@ -0,0 +1,11 @@
++package com.nuvio.app.core.ui
++
++/**
++ * cwrneirOS: commonMain-readable mirror of the desktop text-field focus gate.
++ * Written by the desktop tracker on the AWT EDT and read lazily at key-event
++ * time (same thread), so plain vars suffice. Stays false on Android/iOS.
++ */
++internal object PlatformTextInputState {
++    var isActive: Boolean = false
++    var isMultilineActive: Boolean = false
++}
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/TextInputTracker.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/TextInputTracker.kt
+index a2567eb..1ad778e 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/TextInputTracker.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/TextInputTracker.kt
+@@ -7,5 +7,10 @@ import androidx.compose.ui.Modifier
+  * AWT key dispatcher can stop consuming arrow keys while its caret is active
+  * (see PlatformKeyboardNavigation.desktop.kt). Apply to the field's own
+  * modifier chain; no-op on Android and iOS.
++ *
++ * [singleLine] must mirror the field's own `singleLine` flag: in a multiline
++ * field (singleLine = false) Up/Down move the caret, so the dispatcher must
++ * also preserve those keys; in a single-line field they move nothing and stay
++ * available for focus traversal.
+  */
+-expect fun Modifier.nuvioTracksTextInput(): Modifier
++expect fun Modifier.nuvioTracksTextInput(singleLine: Boolean = true): Modifier
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/collection/CollectionManagementScreen.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/collection/CollectionManagementScreen.kt
+index ac24461..9371d0b 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/collection/CollectionManagementScreen.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/collection/CollectionManagementScreen.kt
+@@ -381,7 +381,7 @@ private fun ImportDialog(
+             modifier = Modifier
+                 .fillMaxWidth()
+                 .height(160.dp)
+-                .nuvioTracksTextInput(),
++                .nuvioTracksTextInput(singleLine = false),
+             placeholder = {
+                 Text(
+                     stringResource(Res.string.collections_import_json_placeholder),
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/library/LibraryListEditor.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/library/LibraryListEditor.kt
+index b04e6ba..3cb1634 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/library/LibraryListEditor.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/library/LibraryListEditor.kt
+@@ -74,7 +74,7 @@ internal fun LibraryListEditor(
+                 onValueChange = onDescriptionChange,
+                 label = { Text(stringResource(Res.string.library_list_description)) },
+                 enabled = !state.isPending,
+-                modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(),
++                modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(singleLine = false),
+                 shape = tokens.shapes.compactCard,
+                 colors = inputColors,
+                 minLines = 2,
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/DebridSettingsPage.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/DebridSettingsPage.kt
+index 18bf6bc..c2107fa 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/DebridSettingsPage.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/DebridSettingsPage.kt
+@@ -666,7 +666,7 @@ private fun DebridTemplateDialog(
+             modifier = Modifier
+                 .fillMaxWidth()
+                 .heightIn(min = 140.dp, max = 280.dp)
+-                .nuvioTracksTextInput(),
++                .nuvioTracksTextInput(singleLine = false),
+             minLines = 5,
+             colors = OutlinedTextFieldDefaults.colors(
+                 focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
+@@ -1110,7 +1110,7 @@ private fun DebridTextListDialog(
+             modifier = Modifier
+                 .fillMaxWidth()
+                 .heightIn(min = 120.dp)
+-                .nuvioTracksTextInput(),
++                .nuvioTracksTextInput(singleLine = false),
+             minLines = 4,
+             colors = OutlinedTextFieldDefaults.colors(
+                 focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/PosterCustomizationSettingsPage.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/PosterCustomizationSettingsPage.kt
+index bcd784a..0d731c0 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/PosterCustomizationSettingsPage.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/PosterCustomizationSettingsPage.kt
+@@ -209,7 +209,7 @@ internal fun LazyListScope.posterCustomizationSettingsContent(
+                     OutlinedTextField(
+                         value = editingPattern,
+                         onValueChange = { editingPattern = it },
+-                        modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(),
++                        modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(singleLine = false),
+                         placeholder = {
+                             Text(
+                                 text = stringResource(Res.string.settings_custom_poster_placeholder),
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/StreamsSettingsPage.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/StreamsSettingsPage.kt
+index 4118ece..cae0222 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/StreamsSettingsPage.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/StreamsSettingsPage.kt
+@@ -344,7 +344,7 @@ private fun BadgeUrlManagerDialog(
+                 draftUrl = it
+                 errorMessage = null
+             },
+-            modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(),
++            modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(singleLine = false),
+             label = { Text(stringResource(Res.string.settings_fusion_badge_url_label)) },
+             singleLine = false,
+             minLines = 2,
+diff --git a/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/DesktopTextInputState.kt b/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/DesktopTextInputState.kt
+index 9d56c73..b5974ff 100644
+--- a/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/DesktopTextInputState.kt
++++ b/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/DesktopTextInputState.kt
+@@ -12,29 +12,45 @@ import java.util.concurrent.atomic.AtomicInteger
+  * counter while a field is focused and decrements it on focus loss or disposal.
+  *
+  * Invariant: `focusedFieldCount` equals the number of live tracker instances
+- * currently in the focused state. Every tracker pairs each increment with
+- * exactly one decrement (focus loss or disposal, whichever comes first), so
+- * the count never goes negative and overlapping focus changes between fields
+- * leave it at the number of fields actually focused.
++ * currently in the focused state, and `focusedMultilineFieldCount` is the
++ * subset of those tracking a multiline field. Every tracker pairs each
++ * increment with exactly one decrement (focus loss or disposal, whichever
++ * comes first), so neither count goes negative and overlapping focus changes
++ * between fields leave them at the number of fields actually focused.
+  *
+  * Thread model: ComposeWindow composition/apply and AWT key dispatch both run
+  * on the AWT event dispatch thread, so reads and writes are already
+- * serialized. The atomic keeps the counter correct (and visible) if a popup
++ * serialized. The atomics keep the counters correct (and visible) if a popup
+  * composition or a future non-EDT caller ever reports state from another
+- * thread.
++ * thread. Both counters are mirrored into the commonMain-readable
++ * [PlatformTextInputState] on every change.
+  */
+ internal object DesktopTextInputState {
+     private val focusedFieldCount = AtomicInteger(0)
++    private val focusedMultilineFieldCount = AtomicInteger(0)
+ 
+     /** True while at least one tracked Compose text field holds focus. */
+     val isActive: Boolean
+         get() = focusedFieldCount.get() > 0
+ 
+-    fun onFieldFocusGained() {
++    /** True while at least one tracked multiline Compose text field holds focus. */
++    val isMultilineActive: Boolean
++        get() = focusedMultilineFieldCount.get() > 0
++
++    fun onFieldFocusGained(multiline: Boolean) {
+         focusedFieldCount.incrementAndGet()
++        if (multiline) focusedMultilineFieldCount.incrementAndGet()
++        syncMirror()
+     }
+ 
+-    fun onFieldFocusLost() {
++    fun onFieldFocusLost(multiline: Boolean) {
+         focusedFieldCount.decrementAndGet()
++        if (multiline) focusedMultilineFieldCount.decrementAndGet()
++        syncMirror()
++    }
++
++    private fun syncMirror() {
++        PlatformTextInputState.isActive = isActive
++        PlatformTextInputState.isMultilineActive = isMultilineActive
+     }
+ }
+diff --git a/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/PlatformKeyboardNavigation.desktop.kt b/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/PlatformKeyboardNavigation.desktop.kt
+index a091566..25a9aab 100644
+--- a/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/PlatformKeyboardNavigation.desktop.kt
++++ b/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/PlatformKeyboardNavigation.desktop.kt
+@@ -23,22 +23,35 @@ actual fun PlatformKeyboardNavigation() {
+ 
+     DisposableEffect(Unit) {
+         val dispatcher = KeyEventDispatcher { event: KeyEvent ->
+-            // Compose text fields are not AWT components, so isArrowKeyConsumer()
+-            // cannot see them; while one holds focus, let Compose handle arrows
+-            // (caret movement) instead of consuming them for focus traversal.
+-            if (DesktopTextInputState.isActive) return@KeyEventDispatcher false
+             if (event.id != KeyEvent.KEY_PRESSED) return@KeyEventDispatcher false
+             if (KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                     .focusOwner.isArrowKeyConsumer()
+             ) return@KeyEventDispatcher false
+ 
+-            when (event.keyCode) {
++            // Compose text fields are not AWT components, so isArrowKeyConsumer()
++            // cannot see them. Gate per key instead of blanket-passing arrows:
++            // Left/Right always belong to the caret while a field is focused,
++            // but Up/Down belong to the caret only in a multiline field; in a
++            // single-line field they move nothing and must still traverse focus.
++            val key = event.keyCode
++            when (key) {
++                KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT ->
++                    if (DesktopTextInputState.isActive) return@KeyEventDispatcher false
++                KeyEvent.VK_UP, KeyEvent.VK_DOWN ->
++                    if (DesktopTextInputState.isMultilineActive) return@KeyEventDispatcher false
++            }
++
++            val moved = when (key) {
+                 KeyEvent.VK_LEFT -> focusManager.moveFocus(FocusDirection.Left)
+                 KeyEvent.VK_RIGHT -> focusManager.moveFocus(FocusDirection.Right)
+                 KeyEvent.VK_UP -> focusManager.moveFocus(FocusDirection.Up)
+                 KeyEvent.VK_DOWN -> focusManager.moveFocus(FocusDirection.Down)
+                 else -> return@KeyEventDispatcher false
+             }
++            println(
++                "nuvio-nav: key=$key moved=$moved text=${DesktopTextInputState.isActive} " +
++                    "ml=${DesktopTextInputState.isMultilineActive}",
++            )
+             true
+         }
+         KeyboardFocusManager.getCurrentKeyboardFocusManager()
+diff --git a/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/TextInputTracker.desktop.kt b/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/TextInputTracker.desktop.kt
+index 70cd3c8..356dc5c 100644
+--- a/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/TextInputTracker.desktop.kt
++++ b/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/TextInputTracker.desktop.kt
+@@ -11,16 +11,18 @@ import androidx.compose.ui.focus.onFocusChanged
+  * tracker on the field's modifier chain so [DesktopTextInputState.isActive] is
+  * true while the field can move a caret.
+  */
+-actual fun Modifier.nuvioTracksTextInput(): Modifier = composed {
+-    val tracker = remember { TextInputFocusTracker() }
++actual fun Modifier.nuvioTracksTextInput(singleLine: Boolean): Modifier = composed {
++    val tracker = remember { TextInputFocusTracker(multiline = !singleLine) }
+     DisposableEffect(Unit) {
+         onDispose { tracker.onDetached() }
+     }
+-    this.onFocusChanged { tracker.onFocusChanged(it.hasFocus) }
++    // isFocused (not hasFocus): a focused trailing icon/clear button inside the
++    // field must not keep the text-input gate on.
++    this.onFocusChanged { tracker.onFocusChanged(it.isFocused) }
+ }
+ 
+ /**
+- * Per-field edge detector keeping the global counter balanced:
++ * Per-field edge detector keeping the global counters balanced:
+  * - a gain fires only on the inactive -> active edge (the initial inactive
+  *   callback `onFocusChanged` delivers on attach is ignored);
+  * - a loss fires exactly once, either from the focus callback or from
+@@ -28,22 +30,24 @@ actual fun Modifier.nuvioTracksTextInput(): Modifier = composed {
+  * - [onDetached] is idempotent, so disposal after a loss does not decrement
+  *   twice and disposal from a focused state decrements exactly once.
+  */
+-private class TextInputFocusTracker {
++private class TextInputFocusTracker(
++    private val multiline: Boolean,
++) {
+     private var focused = false
+ 
+-    fun onFocusChanged(hasFocus: Boolean) {
+-        if (hasFocus == focused) return
+-        focused = hasFocus
+-        if (hasFocus) {
+-            DesktopTextInputState.onFieldFocusGained()
++    fun onFocusChanged(isFocused: Boolean) {
++        if (isFocused == focused) return
++        focused = isFocused
++        if (isFocused) {
++            DesktopTextInputState.onFieldFocusGained(multiline)
+         } else {
+-            DesktopTextInputState.onFieldFocusLost()
++            DesktopTextInputState.onFieldFocusLost(multiline)
+         }
+     }
+ 
+     fun onDetached() {
+         if (!focused) return
+         focused = false
+-        DesktopTextInputState.onFieldFocusLost()
++        DesktopTextInputState.onFieldFocusLost(multiline)
+     }
+ }
+diff --git a/composeApp/src/iosMain/kotlin/com/nuvio/app/core/ui/TextInputTracker.ios.kt b/composeApp/src/iosMain/kotlin/com/nuvio/app/core/ui/TextInputTracker.ios.kt
+index a3f8a1d..301f96a 100644
+--- a/composeApp/src/iosMain/kotlin/com/nuvio/app/core/ui/TextInputTracker.ios.kt
++++ b/composeApp/src/iosMain/kotlin/com/nuvio/app/core/ui/TextInputTracker.ios.kt
+@@ -2,4 +2,4 @@ package com.nuvio.app.core.ui
+ 
+ import androidx.compose.ui.Modifier
+ 
+-actual fun Modifier.nuvioTracksTextInput(): Modifier = this
++actual fun Modifier.nuvioTracksTextInput(singleLine: Boolean): Modifier = this

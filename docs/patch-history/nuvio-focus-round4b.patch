@@ -1,0 +1,408 @@
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt
+index 453da8d..4164e2a 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt
+@@ -71,6 +71,7 @@ import com.nuvio.app.core.ui.NuvioNavBarScrollState
+ import com.nuvio.app.core.ui.NuvioTokens
+ import com.nuvio.app.core.ui.SettingsFocusLinks
+ import com.nuvio.app.core.ui.nuvio
++import com.nuvio.app.core.ui.nuvioDebugFocusTag
+ import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.features.cloud.CloudLibraryContentType
+ import com.nuvio.app.features.cloud.CloudLibraryFile
+@@ -737,6 +738,12 @@ internal fun DesktopHoverSidebar(
+     val searchFocusRequester = remember { FocusRequester() }
+     val libraryFocusRequester = remember { FocusRequester() }
+     val settingsFocusRequester = remember { FocusRequester() }
++    // cwrneirOS round 4b: expose the rail requesters so Left from content/rail can
++    // return to the owning tab icon (read by RootTabHost and SettingsScreen).
++    SettingsFocusLinks.railEntries[AppScreenTab.Home] = homeFocusRequester
++    SettingsFocusLinks.railEntries[AppScreenTab.Search] = searchFocusRequester
++    SettingsFocusLinks.railEntries[AppScreenTab.Library] = libraryFocusRequester
++    SettingsFocusLinks.railEntries[AppScreenTab.Settings] = settingsFocusRequester
+     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+     val profileState by ProfileRepository.state.collectAsStateWithLifecycle()
+     val avatars by AvatarRepository.avatars.collectAsStateWithLifecycle()
+@@ -799,7 +806,14 @@ internal fun DesktopHoverSidebar(
+                         // visible, Down keeps the default geometric edge into it.
+                         up = FocusRequester.Cancel
+                         down = if (profileStackVisible) FocusRequester.Default else homeFocusRequester
++                        // cwrneirOS round 4b: Right on the Settings tab goes to the
++                        // active category (a geometric jump into the top bar left
++                        // the ring invisible).
++                        if (selectedTab == AppScreenTab.Settings) {
++                            SettingsFocusLinks.categoryEntry?.let { right = it }
++                        }
+                     }
++                    .nuvioDebugFocusTag("rail-avatar")
+                     .clickable(
+                         interactionSource = remember { MutableInteractionSource() },
+                         indication = null,
+@@ -820,6 +834,7 @@ internal fun DesktopHoverSidebar(
+                     onProfileSelected = onProfileSelected,
+                     onAddProfileRequested = onAddProfileRequested,
+                     onDismissRequest = { onProfileStackVisibleChange(false) },
++                    lastRowDownRequester = homeFocusRequester,
+                     modifier = Modifier
+                         .align(Alignment.TopCenter)
+                         .padding(top = profileStackTop)
+@@ -848,7 +863,8 @@ internal fun DesktopHoverSidebar(
+                             if (selectedTab == AppScreenTab.Settings) {
+                                 SettingsFocusLinks.categoryEntry?.let { right = it }
+                             }
+-                        },
++                        }
++                        .nuvioDebugFocusTag("rail-home"),
+                 ) { color ->
+                     Icon(
+                         imageVector = Icons.Filled.Home,
+@@ -870,7 +886,8 @@ internal fun DesktopHoverSidebar(
+                             if (selectedTab == AppScreenTab.Settings) {
+                                 SettingsFocusLinks.categoryEntry?.let { right = it }
+                             }
+-                        },
++                        }
++                        .nuvioDebugFocusTag("rail-search"),
+                 ) { color ->
+                     Icon(
+                         painter = painterResource(Res.drawable.sidebar_search),
+@@ -892,7 +909,8 @@ internal fun DesktopHoverSidebar(
+                             if (selectedTab == AppScreenTab.Settings) {
+                                 SettingsFocusLinks.categoryEntry?.let { right = it }
+                             }
+-                        },
++                        }
++                        .nuvioDebugFocusTag("rail-library"),
+                 ) { color ->
+                     Icon(
+                         painter = painterResource(Res.drawable.sidebar_library),
+@@ -914,7 +932,8 @@ internal fun DesktopHoverSidebar(
+                             if (selectedTab == AppScreenTab.Settings) {
+                                 SettingsFocusLinks.categoryEntry?.let { right = it }
+                             }
+-                        },
++                        }
++                        .nuvioDebugFocusTag("rail-settings"),
+                 ) { color ->
+                     Icon(
+                         imageVector = Icons.Rounded.Settings,
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/MainAppContent.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/MainAppContent.kt
+index 5794f54..3e3885f 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/MainAppContent.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/MainAppContent.kt
+@@ -295,7 +295,15 @@ internal fun MainAppContent(
+         // navigation is unaffected.
+         val anyFocus = PlatformFocusPresence.hasFocus
+         LaunchedEffect(anyFocus) {
+-            if (!anyFocus) rootFocusAnchor.requestFocus()
++            if (!anyFocus) {
++                // cwrneirOS round 4b: give an in-flight transition focus request
++                // (e.g. the settings subpage back button) a frame to land, then
++                // park on the anchor only if focus is still nowhere. The old
++                // effect captured anyFocus=false and could take focus right back
++                // from the back button, leaving the subpage ring invisible.
++                withFrameNanos { }
++                if (!PlatformFocusPresence.hasFocus) rootFocusAnchor.requestFocus()
++            }
+         }
+         val liquidGlassNativeTabBarEnabled by remember {
+             ThemeSettingsRepository.liquidGlassNativeTabBarEnabled
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/RootTabHost.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/RootTabHost.kt
+index cf81b57..2e0e3ff 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/RootTabHost.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/RootTabHost.kt
+@@ -24,6 +24,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
+ import androidx.lifecycle.compose.currentStateAsState
+ import androidx.lifecycle.compose.rememberLifecycleOwner
+ import com.nuvio.app.core.ui.LocalScreenActive
++import com.nuvio.app.core.ui.SettingsFocusLinks
+ 
+ @Composable
+ internal fun RootTabHost(
+@@ -92,7 +93,15 @@ private fun RootTabPane(
+             Box(
+                 Modifier.fillMaxSize()
+                     .graphicsLayer()
+-                    .focusProperties { canFocus = active }
++                    .focusProperties {
++                        canFocus = active
++                        // cwrneirOS round 4b: Left from a tab's content returns to the
++                        // rail icon that owns the tab. Settings keeps its own
++                        // category/content left edges (deeper in the tree).
++                        if (tab != AppScreenTab.Settings) {
++                            SettingsFocusLinks.railEntries[tab]?.let { left = it }
++                        }
++                    }
+                     .pointerInput(active) {
+                         if (!active) {
+                             awaitPointerEventScope {
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/NuvioFocusable.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/NuvioFocusable.kt
+index dfa38d1..c02043d 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/NuvioFocusable.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/NuvioFocusable.kt
+@@ -69,3 +69,17 @@ fun Modifier.nuvioFocusBorder(
+             }
+         }
+ }
++
++/**
++ * cwrneirOS retest-4b diagnostic: prints when this exact node becomes the focused
++ * target. Pull `nuvio-focus:` lines from the unit journal; removed at closeout.
++ */
++fun Modifier.nuvioDebugFocusTag(label: String): Modifier =
++    onFocusChanged { if (it.isFocused) println("nuvio-focus: $label") }
++
++/**
++ * cwrneirOS retest-4b diagnostic for focus groups (canFocus=false containers):
++ * prints when focus is anywhere inside this subtree.
++ */
++fun Modifier.nuvioDebugFocusGroupTag(label: String): Modifier =
++    onFocusChanged { if (it.hasFocus) println("nuvio-focus: $label *") }
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/SettingsFocusLinks.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/SettingsFocusLinks.kt
+index f2a8829..5c1a018 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/SettingsFocusLinks.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/SettingsFocusLinks.kt
+@@ -1,9 +1,13 @@
+ package com.nuvio.app.core.ui
+ 
+ import androidx.compose.ui.focus.FocusRequester
++import com.nuvio.app.AppScreenTab
+ 
+ /** cwrneirOS: focus-graph bridge between the app rail, the settings category column and its content. */
+ internal object SettingsFocusLinks {
+     var categoryEntry: FocusRequester? = null
+     var contentEntry: FocusRequester? = null
++
++    /** Per-tab rail item requesters, registered by DesktopHoverSidebar (Left → owning icon, round 4b). */
++    val railEntries = mutableMapOf<AppScreenTab, FocusRequester>()
+ }
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/jelly/JellyTabs.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/jelly/JellyTabs.kt
+index 1d91cb4..4ee0719 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/jelly/JellyTabs.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/jelly/JellyTabs.kt
+@@ -44,6 +44,7 @@ import com.nuvio.app.core.ui.FloatingNavigationItem
+ import com.nuvio.app.core.ui.accentBrush
+ import com.nuvio.app.core.ui.gradientMask
+ import com.nuvio.app.core.ui.nuvio
++import com.nuvio.app.core.ui.nuvioDebugFocusTag
+ import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.core.ui.themePalette
+ import com.nuvio.app.core.ui.visualNavIndex
+@@ -112,6 +113,7 @@ internal fun JellyTabTargets(
+             Box(
+                 modifier = Modifier.weight(1f).fillMaxHeight()
+                     .nuvioFocusBorder(RoundedCornerShape(50))
++                    .nuvioDebugFocusTag("topbar-tab")
+                     .selectable(
+                         selected = item.selected,
+                         role = Role.Tab,
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/profiles/ProfileSwitcherTab.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/profiles/ProfileSwitcherTab.kt
+index 30f739a..5a40731 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/profiles/ProfileSwitcherTab.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/profiles/ProfileSwitcherTab.kt
+@@ -54,6 +54,7 @@ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.draw.clip
+ import androidx.compose.ui.draw.shadow
+ import androidx.compose.ui.focus.FocusRequester
++import androidx.compose.ui.focus.focusProperties
+ import androidx.compose.ui.focus.focusRequester
+ import androidx.compose.ui.geometry.Offset
+ import androidx.compose.ui.geometry.Rect
+@@ -86,7 +87,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
+ import dev.chrisbanes.haze.hazeEffect
+ import com.nuvio.app.core.ui.NuvioAsyncImage as AsyncImage
+ import com.nuvio.app.core.ui.NuvioTokens
++import com.nuvio.app.core.ui.PlatformBackHandler
+ import com.nuvio.app.core.ui.nuvio
++import com.nuvio.app.core.ui.nuvioDebugFocusTag
+ import com.nuvio.app.core.ui.nuvioFocusBorder
+ import dev.chrisbanes.haze.HazeState
+ import com.nuvio.app.isIos
+@@ -337,6 +340,7 @@ fun SidebarProfileSwitcherStack(
+     onProfileSelected: (NuvioProfile) -> Unit,
+     onAddProfileRequested: () -> Unit,
+     onDismissRequest: () -> Unit,
++    lastRowDownRequester: FocusRequester? = null,
+     modifier: Modifier = Modifier,
+ ) {
+     val profileState by ProfileRepository.state.collectAsStateWithLifecycle()
+@@ -350,6 +354,10 @@ fun SidebarProfileSwitcherStack(
+         AvatarRepository.refreshAvatars()
+     }
+ 
++    // cwrneirOS round 4b: B/Esc closes the switcher stack. The PIN sub-view
++    // handles its own Esc (onPreviewKeyEvent), so disable this while it shows.
++    PlatformBackHandler(enabled = pinProfile == null) { onDismissRequest() }
++
+     fun chooseProfile(profile: NuvioProfile) {
+         if (profile.profileIndex == activeProfile?.profileIndex) {
+             onDismissRequest()
+@@ -368,17 +376,28 @@ fun SidebarProfileSwitcherStack(
+             Column(
+                 verticalArrangement = Arrangement.spacedBy(4.dp),
+             ) {
+-                profiles.forEach { profile ->
++                val hasAddRow = profiles.size < MAX_PROFILES
++                val exitDownModifier = Modifier.focusProperties {
++                    // cwrneirOS round 4b: Down on the last stack row exits the
++                    // switcher to Home (previously it leaked into the settings
++                    // categories through the geometric band).
++                    down = lastRowDownRequester ?: FocusRequester.Cancel
++                }
++                profiles.forEachIndexed { index, profile ->
++                    val isLastRow = !hasAddRow && index == profiles.lastIndex
+                     SidebarProfileSwitcherRow(
+                         profile = profile,
+                         avatars = avatars,
+                         isActive = profile.profileIndex == activeProfile?.profileIndex,
++                        modifier = (if (isLastRow) exitDownModifier else Modifier)
++                            .nuvioDebugFocusTag("stack-${profile.name}"),
+                         onClick = { chooseProfile(profile) },
+                     )
+                 }
+ 
+-                if (profiles.size < MAX_PROFILES) {
++                if (hasAddRow) {
+                     SidebarAddProfileRow(
++                        modifier = exitDownModifier.nuvioDebugFocusTag("stack-add"),
+                         onClick = {
+                             onDismissRequest()
+                             onAddProfileRequested()
+@@ -410,11 +429,12 @@ private fun SidebarProfileSwitcherRow(
+     profile: NuvioProfile,
+     avatars: List<AvatarCatalogItem>,
+     isActive: Boolean,
++    modifier: Modifier = Modifier,
+     onClick: () -> Unit,
+ ) {
+     val tokens = MaterialTheme.nuvio
+     Row(
+-        modifier = Modifier
++        modifier = modifier
+             .fillMaxWidth()
+             .height(40.dp)
+             .nuvioFocusBorder(tokens.shapes.compactCard)
+@@ -467,10 +487,11 @@ private fun SidebarProfileSwitcherRow(
+ @Composable
+ private fun SidebarAddProfileRow(
+     onClick: () -> Unit,
++    modifier: Modifier = Modifier,
+ ) {
+     val tokens = MaterialTheme.nuvio
+     Row(
+-        modifier = Modifier
++        modifier = modifier
+             .fillMaxWidth()
+             .height(40.dp)
+             .nuvioFocusBorder(tokens.shapes.compactCard)
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt
+index 95dc890..ad3e28b 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt
+@@ -57,6 +57,7 @@ import com.nuvio.app.core.ui.NuvioBackButton
+ import com.nuvio.app.core.ui.NuvioSectionLabel
+ import com.nuvio.app.core.ui.nuvio
+ import com.nuvio.app.core.ui.nuvioConsumePointerEvents
++import com.nuvio.app.core.ui.nuvioDebugFocusTag
+ import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.core.ui.nuvioTracksTextInput
+ import com.nuvio.app.features.home.HomeCatalogSettingsItem
+@@ -149,7 +150,8 @@ internal fun TabletPageHeader(
+                             } else {
+                                 Modifier
+                             },
+-                        ),
++                        )
++                        .nuvioDebugFocusTag("back-button"),
+                     shape = tokens.shapes.compactCard,
+                     containerColor = tokens.colors.surface,
+                     contentColor = tokens.colors.textPrimary,
+@@ -265,6 +267,11 @@ internal fun SettingsNavigationRow(
+     Row(
+         modifier = modifier
+             .fillMaxWidth()
++            // nuvioFocusBorder draws outside the node (2.5dp outline inflation +
++            // 1.5dp half stroke = up to 4dp out). Inset the focusable box so the
++            // enclosing SettingsCard Surface(shape) clip cannot shave the
++            // left/right ring strokes; the row background is transparent.
++            .padding(horizontal = NuvioTokens.Space.s4)
+             .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4))
+             .clickable(enabled = enabled, onClick = onClick)
+             .padding(horizontal = horizontalPadding, vertical = verticalPadding)
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt
+index 01b8942..b493771 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt
+@@ -69,7 +69,10 @@ import com.nuvio.app.core.ui.NuvioDesktopVerticalScrollbar
+ import com.nuvio.app.core.ui.NuvioScreen
+ import com.nuvio.app.core.ui.NuvioScreenHeader
+ import com.nuvio.app.core.ui.PlatformBackHandler
++import com.nuvio.app.core.ui.PlatformFocusPresence
+ import com.nuvio.app.core.ui.SettingsFocusLinks
++import com.nuvio.app.core.ui.nuvioDebugFocusGroupTag
++import com.nuvio.app.core.ui.nuvioDebugFocusTag
+ import com.nuvio.app.navigation.LocalNativeNavigationBarHidden
+ import com.nuvio.app.navigation.LocalUseNativeNavigation
+ import com.nuvio.app.core.ui.isLiquidGlassNativeTabBarSupported
+@@ -994,17 +997,29 @@ private fun TabletSettingsScreen(
+         val internalBackAvailable = showInternalHeader &&
+             !(useNativeNavigation && !nativeNavigationBarHidden)
+         if (page != SettingsPage.Root && internalBackAvailable) {
+-            // cwrneirOS round 4: the header back button may not be attached yet
+-            // on the first frames after the page swap; keep requesting until the
+-            // request sticks so the ring appears immediately (and B has a target).
++            // cwrneirOS round 4/4b: the header back button may not be attached on
++            // the first frames after the page swap; keep requesting until the
++            // request sticks AND survives a following frame — the recovery-anchor
++            // effect or a recomposition could otherwise take focus back and leave
++            // the subpage ring invisible.
+             repeat(SettingsContentFocusRetryFrames) {
+                 withFrameNanos { }
+-                if (backRequester.requestFocus()) return@LaunchedEffect
++                if (backRequester.requestFocus()) {
++                    withFrameNanos { }
++                    if (PlatformFocusPresence.hasFocus && !PlatformFocusPresence.anchorActive) {
++                        return@LaunchedEffect
++                    }
++                }
+             }
+         } else {
+             repeat(SettingsContentFocusRetryFrames) {
+                 withFrameNanos { }
+-                if (SettingsFocusLinks.categoryEntry?.requestFocus() == true) return@LaunchedEffect
++                if (SettingsFocusLinks.categoryEntry?.requestFocus() == true) {
++                    withFrameNanos { }
++                    if (PlatformFocusPresence.hasFocus && !PlatformFocusPresence.anchorActive) {
++                        return@LaunchedEffect
++                    }
++                }
+             }
+         }
+     }
+@@ -1066,7 +1081,11 @@ private fun TabletSettingsScreen(
+                                 if (category == SettingsCategory.entries.first()) up = FocusRequester.Cancel
+                                 if (category == SettingsCategory.entries.last()) down = FocusRequester.Cancel
+                                 SettingsFocusLinks.contentEntry?.let { right = it }
++                                // cwrneirOS round 4b: Left returns to the Settings
++                                // rail icon, the page that owns this column.
++                                SettingsFocusLinks.railEntries[AppScreenTab.Settings]?.let { left = it }
+                             }
++                            .nuvioDebugFocusTag("category-${category.name}")
+                             .then(if (category == activeCategory) Modifier.focusRequester(categoryEntryRequester) else Modifier),
+                     )
+                 }
+@@ -1152,7 +1171,13 @@ private fun TabletSettingsScreen(
+                         .widthIn(max = if (isDesktop) 800.dp else Dp.Unspecified)
+                         .fillMaxWidth()
+                         .weight(1f)
+-                        .focusGroup(),
++                        .nuvioDebugFocusGroupTag("content-group")
++                        .focusGroup()
++                        .focusProperties {
++                            // cwrneirOS round 4b: Left from any content node goes
++                            // back to the active category (inherited by rows).
++                            SettingsFocusLinks.categoryEntry?.let { left = it }
++                        },
+                 ) {
+                     LazyColumn(
+                         state = listState,

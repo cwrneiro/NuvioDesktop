@@ -1,0 +1,152 @@
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/PosterCustomizationSettingsPage.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/PosterCustomizationSettingsPage.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/PosterCustomizationSettingsPage.kt	2026-10-08 00:29:44.672372609 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/PosterCustomizationSettingsPage.kt	2026-10-08 12:40:31.683459931 -0300
+@@ -70,6 +70,7 @@
+ import com.nuvio.app.core.ui.PosterCardStyleRepository
+ import com.nuvio.app.core.ui.PosterCardStyleUiState
+ import com.nuvio.app.core.ui.cardDepthVisual
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.core.ui.nuvioTracksTextInput
+ import nuvio.composeapp.generated.resources.Res
+ import nuvio.composeapp.generated.resources.action_reset
+@@ -209,7 +210,7 @@
+                     OutlinedTextField(
+                         value = editingPattern,
+                         onValueChange = { editingPattern = it },
+-                        modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(singleLine = false),
++                        modifier = Modifier.fillMaxWidth().nuvioTracksTextInput(),
+                         placeholder = {
+                             Text(
+                                 text = stringResource(Res.string.settings_custom_poster_placeholder),
+@@ -219,8 +220,7 @@
+                         textStyle = MaterialTheme.typography.bodySmall.copy(
+                             fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                         ),
+-                        singleLine = false,
+-                        maxLines = 4,
++                        singleLine = true,
+                     )
+                     Row(
+                         horizontalArrangement = Arrangement.spacedBy(8.dp),
+@@ -825,6 +825,7 @@
+         Switch(
+             checked = checked,
+             onCheckedChange = onCheckedChange,
++            modifier = Modifier.nuvioFocusBorder(RoundedCornerShape(8.dp)),
+             colors = SwitchDefaults.colors(
+                 checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                 checkedTrackColor = MaterialTheme.colorScheme.primary,
+@@ -953,6 +954,7 @@
+                 FilterChip(
+                     selected = option.value == selectedValue,
+                     onClick = { onSelected(option.value) },
++                    modifier = Modifier.nuvioFocusBorder(RoundedCornerShape(8.dp)),
+                     label = { Text(option.label) },
+                     colors = FilterChipDefaults.filterChipColors(
+                         selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt	2026-10-08 00:29:44.690266525 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt	2026-10-08 12:40:25.887331928 -0300
+@@ -492,8 +492,17 @@
+     Column(
+         modifier = Modifier
+             .fillMaxWidth()
++            // Mirror SettingsSwitchRow/SettingsNavigationRow: inset 4dp before
++            // nuvioFocusBorder (the ring draws up to 4dp outside the node) so an
++            // enclosing clip cannot shave it; drop the same 4dp from the content
++            // padding so nothing shifts.
++            .padding(horizontal = NuvioTokens.Space.s4)
++            .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4))
+             .clickable { onExpandedChange(!expanded) }
+-            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
++            .padding(
++                horizontal = horizontalPadding - NuvioTokens.Space.s4,
++                vertical = verticalPadding,
++            ),
+         verticalArrangement = Arrangement.spacedBy(12.dp),
+     ) {
+         Row(
+@@ -561,6 +570,7 @@
+                 Switch(
+                     checked = item.enabled,
+                     onCheckedChange = onEnabledChange,
++                    modifier = Modifier.focusProperties { canFocus = false },
+                     colors = SwitchDefaults.colors(
+                         checkedThumbColor = tokens.colors.onAccent,
+                         checkedTrackColor = tokens.colors.accent,
+@@ -570,6 +580,7 @@
+                 )
+                 if (item.isPinnedToTop) {
+                     IconButton(
++                        modifier = Modifier.focusProperties { canFocus = false },
+                         onClick = onPinnedDragAttempt,
+                     ) {
+                         Icon(
+@@ -589,7 +600,7 @@
+                                     hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                 },
+                             )
+-                        },
++                        }.focusProperties { canFocus = false },
+                         onClick = {},
+                     ) {
+                         Icon(
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt	2026-10-08 00:29:44.690460680 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt	2026-10-08 12:40:36.674570168 -0300
+@@ -967,6 +967,7 @@
+     val categoryEntryRequester = remember { FocusRequester() }
+     val contentEntryRequester = remember { FocusRequester() }
+     val backRequester = remember { FocusRequester() }
++    val contentGroupRequester = remember { FocusRequester() }
+     val focusRequestScope = rememberCoroutineScope()
+     val focusManager = LocalFocusManager.current
+     val useNativeNavigation = LocalUseNativeNavigation.current
+@@ -978,13 +979,14 @@
+             if (SettingsFocusLinks.categoryEntry === categoryEntryRequester) SettingsFocusLinks.categoryEntry = null
+             if (SettingsFocusLinks.contentEntry === contentEntryRequester) SettingsFocusLinks.contentEntry = null
+             if (SettingsFocusLinks.contentEntry === backRequester) SettingsFocusLinks.contentEntry = null
++            if (SettingsFocusLinks.contentEntry === contentGroupRequester) SettingsFocusLinks.contentEntry = null
+         }
+     }
+-    // cwrneirOS round 4: contentEntry must be a concrete attached node —
+-    // the subpage header back button, or the first ringed content row on Root.
+-    // A focus-group Box target could fail the redirect and fall through to the
+-    // recovery anchor; a concrete node is focused directly.
+-    SettingsFocusLinks.contentEntry = if (page == SettingsPage.Root) contentEntryRequester else backRequester
++    // cwrneirOS consolidation fix (2026-10-08): on Root, target the always-composed
++    // content-group Box. Its first row (contentEntryRequester) is uncomposed once the
++    // pane is scrolled, so Right from a category used to no-op; the group redirects
++    // into a placed child. Subpages keep the concrete header back button target.
++    SettingsFocusLinks.contentEntry = if (page == SettingsPage.Root) contentGroupRequester else backRequester
+ 
+     LaunchedEffect(page) {
+         if (page.opensInlineOnTablet) {
+@@ -1180,6 +1182,7 @@
+                         .weight(1f)
+                         .nuvioDebugFocusGroupTag("content-group")
+                         .focusGroup()
++                        .focusRequester(contentGroupRequester)
+                         .focusProperties {
+                             // cwrneirOS round 4b: Left from any content node goes
+                             // back to the active category (inherited by rows).
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/RootTabHost.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/RootTabHost.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/RootTabHost.kt	2026-10-08 00:29:44.683446794 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/RootTabHost.kt	2026-10-08 12:40:20.749218468 -0300
+@@ -94,7 +94,15 @@
+                 Modifier.fillMaxSize()
+                     .graphicsLayer()
+                     .focusProperties {
+-                        canFocus = active
++                        // cwrneirOS consolidation fix (2026-10-08): do NOT force the
++                        // pane's outermost focus target focusable. Home/Search/Library
++                        // content roots are LazyColumns whose scroll anchor is a
++                        // Focusability.Never target; `canFocus = active` turned that
++                        // anchor into a legal 2D candidate, so Right from a rail item
++                        // landed on the invisible, dead-end pane anchor (ring vanished,
++                        // every further direction moved=false). Only opt OUT inactive
++                        // panes; an active pane keeps the anchor non-focusable.
++                        if (!active) canFocus = false
+                         // cwrneirOS round 4b: Left from a tab's content returns to the
+                         // rail icon that owns the tab. Settings keeps its own
+                         // category/content left edges (deeper in the tree).

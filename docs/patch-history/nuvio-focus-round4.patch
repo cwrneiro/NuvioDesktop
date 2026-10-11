@@ -1,0 +1,324 @@
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt
+index 50f3896..453da8d 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt
+@@ -53,7 +53,9 @@ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.draw.alpha
+ import androidx.compose.ui.draw.clip
++import androidx.compose.ui.focus.FocusRequester
+ import androidx.compose.ui.focus.focusProperties
++import androidx.compose.ui.focus.focusRequester
+ import androidx.compose.ui.graphics.Brush
+ import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.text.TextStyle
+@@ -729,6 +731,12 @@ internal fun DesktopHoverSidebar(
+     modifier: Modifier = Modifier,
+ ) {
+     val tokens = MaterialTheme.nuvio
++    // cwrneirOS round 4: explicit rail-corridor requesters (wired via focusProperties below).
++    val avatarFocusRequester = remember { FocusRequester() }
++    val homeFocusRequester = remember { FocusRequester() }
++    val searchFocusRequester = remember { FocusRequester() }
++    val libraryFocusRequester = remember { FocusRequester() }
++    val settingsFocusRequester = remember { FocusRequester() }
+     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+     val profileState by ProfileRepository.state.collectAsStateWithLifecycle()
+     val avatars by AvatarRepository.avatars.collectAsStateWithLifecycle()
+@@ -785,6 +793,13 @@ internal fun DesktopHoverSidebar(
+                     .height(DesktopSidebarItemHeight)
+                     .padding(horizontal = 6.dp, vertical = 4.dp)
+                     .nuvioFocusBorder(RoundedCornerShape(16.dp))
++                    .focusRequester(avatarFocusRequester)
++                    .focusProperties {
++                        // Corridor top end. While the profile switcher stack is
++                        // visible, Down keeps the default geometric edge into it.
++                        up = FocusRequester.Cancel
++                        down = if (profileStackVisible) FocusRequester.Default else homeFocusRequester
++                    }
+                     .clickable(
+                         interactionSource = remember { MutableInteractionSource() },
+                         indication = null,
+@@ -825,6 +840,15 @@ internal fun DesktopHoverSidebar(
+                     selected = selectedTab == AppScreenTab.Home,
+                     expanded = sidebarExpanded,
+                     onClick = { selectTab(AppScreenTab.Home) },
++                    modifier = Modifier
++                        .focusRequester(homeFocusRequester)
++                        .focusProperties {
++                            up = avatarFocusRequester
++                            down = searchFocusRequester
++                            if (selectedTab == AppScreenTab.Settings) {
++                                SettingsFocusLinks.categoryEntry?.let { right = it }
++                            }
++                        },
+                 ) { color ->
+                     Icon(
+                         imageVector = Icons.Filled.Home,
+@@ -838,6 +862,15 @@ internal fun DesktopHoverSidebar(
+                     selected = selectedTab == AppScreenTab.Search,
+                     expanded = sidebarExpanded,
+                     onClick = { selectTab(AppScreenTab.Search) },
++                    modifier = Modifier
++                        .focusRequester(searchFocusRequester)
++                        .focusProperties {
++                            up = homeFocusRequester
++                            down = libraryFocusRequester
++                            if (selectedTab == AppScreenTab.Settings) {
++                                SettingsFocusLinks.categoryEntry?.let { right = it }
++                            }
++                        },
+                 ) { color ->
+                     Icon(
+                         painter = painterResource(Res.drawable.sidebar_search),
+@@ -851,6 +884,15 @@ internal fun DesktopHoverSidebar(
+                     selected = selectedTab == AppScreenTab.Library,
+                     expanded = sidebarExpanded,
+                     onClick = { selectTab(AppScreenTab.Library) },
++                    modifier = Modifier
++                        .focusRequester(libraryFocusRequester)
++                        .focusProperties {
++                            up = searchFocusRequester
++                            down = settingsFocusRequester
++                            if (selectedTab == AppScreenTab.Settings) {
++                                SettingsFocusLinks.categoryEntry?.let { right = it }
++                            }
++                        },
+                 ) { color ->
+                     Icon(
+                         painter = painterResource(Res.drawable.sidebar_library),
+@@ -864,11 +906,15 @@ internal fun DesktopHoverSidebar(
+                     selected = selectedTab == AppScreenTab.Settings,
+                     expanded = sidebarExpanded,
+                     onClick = { selectTab(AppScreenTab.Settings) },
+-                    modifier = Modifier.focusProperties {
+-                        if (selectedTab == AppScreenTab.Settings) {
+-                            SettingsFocusLinks.categoryEntry?.let { right = it }
+-                        }
+-                    },
++                    modifier = Modifier
++                        .focusRequester(settingsFocusRequester)
++                        .focusProperties {
++                            up = libraryFocusRequester
++                            down = FocusRequester.Cancel
++                            if (selectedTab == AppScreenTab.Settings) {
++                                SettingsFocusLinks.categoryEntry?.let { right = it }
++                            }
++                        },
+                 ) { color ->
+                     Icon(
+                         imageVector = Icons.Rounded.Settings,
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/MainAppContent.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/MainAppContent.kt
+index 50c6548..5794f54 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/MainAppContent.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/MainAppContent.kt
+@@ -288,8 +288,11 @@ internal fun MainAppContent(
+         }
+         // Focus recovery: when nothing in the main scene holds focus (e.g. after
+         // navigating into a subpage clears it), park focus on the off-screen root
+-        // anchor so hardware Esc/B keeps working. The anchor's far focusRect keeps
+-        // it out of every 2D search, so normal navigation is unaffected.
++        // anchor so hardware Esc/B keeps working. The anchor's NaN focusRect
++        // makes isCandidate() false for every direction, so no 2D arrow search
++        // can ever land here (a far, even non-empty, rect still participates as
++        // a candidate — the round-3 far-rect guard was ineffective); normal
++        // navigation is unaffected.
+         val anyFocus = PlatformFocusPresence.hasFocus
+         LaunchedEffect(anyFocus) {
+             if (!anyFocus) rootFocusAnchor.requestFocus()
+@@ -2125,7 +2128,12 @@ internal fun MainAppContent(
+             Box(
+                 Modifier
+                     .size(0.dp)
+-                    .focusProperties { focusRect = Rect(10_000f, 10_000f, 10_000f, 10_000f) }
++                    // cwrneirOS round 4: NaN rect → never a 2D search candidate
++                    // in any direction, so no arrow move can ever land on this
++                    // invisible node. The node stays placeable and programmatically
++                    // focusable for the Esc/B parking path; the AWT dispatcher's
++                    // clear-and-retry recovers to a visible node on the next move.
++                    .focusProperties { focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN) }
+                     .onFocusChanged { PlatformFocusPresence.anchorActive = it.isFocused }
+                     .focusRequester(rootFocusAnchor)
+                     .focusable(),
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt
+index 9c90a0e..95dc890 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt
+@@ -253,6 +253,7 @@ internal fun SettingsNavigationRow(
+     iconPainter: Painter? = null,
+     enabled: Boolean = true,
+     isTablet: Boolean,
++    modifier: Modifier = Modifier,
+     trailingContent: (@Composable RowScope.() -> Unit)? = null,
+     onClick: () -> Unit,
+ ) {
+@@ -262,7 +263,7 @@ internal fun SettingsNavigationRow(
+     val horizontalPadding = if (isTablet) 20.dp else 16.dp
+ 
+     Row(
+-        modifier = Modifier
++        modifier = modifier
+             .fillMaxWidth()
+             .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4))
+             .clickable(enabled = enabled, onClick = onClick)
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsRootPage.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsRootPage.kt
+index 256c7b9..e02a541 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsRootPage.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsRootPage.kt
+@@ -16,6 +16,7 @@ import androidx.compose.material.icons.rounded.People
+ import androidx.compose.material.icons.rounded.PlayArrow
+ import androidx.compose.material.icons.rounded.Policy
+ import androidx.compose.material.icons.rounded.Tune
++import androidx.compose.ui.Modifier
+ import androidx.compose.ui.platform.LocalUriHandler
+ import nuvio.composeapp.generated.resources.Res
+ import nuvio.composeapp.generated.resources.compose_settings_page_account
+@@ -76,6 +77,7 @@ internal fun LazyListScope.settingsRootContent(
+     showAdvancedSection: Boolean = true,
+     showSupportersContributorsPage: Boolean = true,
+     showAttribution: Boolean = true,
++    firstRowModifier: Modifier = Modifier,
+ ) {
+     if (showAccountSection) {
+         item {
+@@ -90,6 +92,7 @@ internal fun LazyListScope.settingsRootContent(
+                             description = stringResource(Res.string.compose_settings_root_switch_profile_description),
+                             icon = Icons.Rounded.People,
+                             isTablet = isTablet,
++                            modifier = firstRowModifier,
+                             onClick = onSwitchProfileClick,
+                         )
+                         SettingsGroupDivider(isTablet = isTablet)
+@@ -99,6 +102,7 @@ internal fun LazyListScope.settingsRootContent(
+                         description = stringResource(Res.string.compose_settings_root_account_description),
+                         icon = Icons.Rounded.AccountCircle,
+                         isTablet = isTablet,
++                        modifier = if (onSwitchProfileClick == null) firstRowModifier else Modifier,
+                         onClick = onAccountClick,
+                     )
+                     SettingsGroupDivider(isTablet = isTablet)
+@@ -125,6 +129,7 @@ internal fun LazyListScope.settingsRootContent(
+                         description = stringResource(Res.string.compose_settings_root_appearance_description),
+                         icon = Icons.Rounded.Palette,
+                         isTablet = isTablet,
++                        modifier = firstRowModifier,
+                         onClick = onAppearanceClick,
+                     )
+                     SettingsGroupDivider(isTablet = isTablet)
+@@ -179,6 +184,7 @@ internal fun LazyListScope.settingsRootContent(
+                             description = stringResource(Res.string.about_supporters_contributors_subtitle),
+                             icon = Icons.Rounded.Favorite,
+                             isTablet = isTablet,
++                            modifier = firstRowModifier,
+                             onClick = onSupportersContributorsClick,
+                         )
+                         SettingsGroupDivider(isTablet = isTablet)
+@@ -188,6 +194,7 @@ internal fun LazyListScope.settingsRootContent(
+                         description = stringResource(Res.string.compose_settings_root_privacy_policy_description),
+                         icon = Icons.Rounded.Policy,
+                         isTablet = isTablet,
++                        modifier = if (showSupportersContributorsPage) Modifier else firstRowModifier,
+                         onClick = { uriHandler.openUri(PRIVACY_POLICY_URL) },
+                     )
+                     SettingsGroupDivider(isTablet = isTablet)
+@@ -236,6 +243,7 @@ internal fun LazyListScope.settingsRootContent(
+                         description = stringResource(Res.string.compose_settings_root_advanced_description),
+                         icon = Icons.Rounded.Tune,
+                         isTablet = isTablet,
++                        modifier = firstRowModifier,
+                         onClick = onAdvancedClick,
+                     )
+                 }
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt
+index 0995902..01b8942 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt
+@@ -45,7 +45,6 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+ import androidx.compose.runtime.snapshotFlow
+ import androidx.compose.runtime.withFrameNanos
+ import androidx.compose.ui.geometry.Offset
+-import androidx.compose.ui.focus.FocusDirection
+ import androidx.compose.ui.focus.FocusRequester
+ import androidx.compose.foundation.focusGroup
+ import androidx.compose.ui.focus.focusProperties
+@@ -120,6 +119,7 @@ import org.jetbrains.compose.resources.stringResource
+ private val SettingsSearchRevealThreshold = 28.dp
+ private const val SettingsSearchRevealAnimationMillis = 240L
+ private const val SettingsSearchRevealHapticDelayMillis = 90L
++private const val SettingsContentFocusRetryFrames = 8
+ 
+ private fun SettingsPage.isEnabledByPolicy(): Boolean =
+     when (this) {
+@@ -968,12 +968,17 @@ private fun TabletSettingsScreen(
+ 
+     DisposableEffect(Unit) {
+         SettingsFocusLinks.categoryEntry = categoryEntryRequester
+-        SettingsFocusLinks.contentEntry = contentEntryRequester
+         onDispose {
+             if (SettingsFocusLinks.categoryEntry === categoryEntryRequester) SettingsFocusLinks.categoryEntry = null
+             if (SettingsFocusLinks.contentEntry === contentEntryRequester) SettingsFocusLinks.contentEntry = null
++            if (SettingsFocusLinks.contentEntry === backRequester) SettingsFocusLinks.contentEntry = null
+         }
+     }
++    // cwrneirOS round 4: contentEntry must be a concrete attached node —
++    // the subpage header back button, or the first ringed content row on Root.
++    // A focus-group Box target could fail the redirect and fall through to the
++    // recovery anchor; a concrete node is focused directly.
++    SettingsFocusLinks.contentEntry = if (page == SettingsPage.Root) contentEntryRequester else backRequester
+ 
+     LaunchedEffect(page) {
+         if (page.opensInlineOnTablet) {
+@@ -986,13 +991,21 @@ private fun TabletSettingsScreen(
+         val from = lastPage
+         lastPage = page
+         if (page == from) return@LaunchedEffect
+-        withFrameNanos { }
+         val internalBackAvailable = showInternalHeader &&
+             !(useNativeNavigation && !nativeNavigationBarHidden)
+         if (page != SettingsPage.Root && internalBackAvailable) {
+-            backRequester.requestFocus()
++            // cwrneirOS round 4: the header back button may not be attached yet
++            // on the first frames after the page swap; keep requesting until the
++            // request sticks so the ring appears immediately (and B has a target).
++            repeat(SettingsContentFocusRetryFrames) {
++                withFrameNanos { }
++                if (backRequester.requestFocus()) return@LaunchedEffect
++            }
+         } else {
+-            SettingsFocusLinks.categoryEntry?.requestFocus()
++            repeat(SettingsContentFocusRetryFrames) {
++                withFrameNanos { }
++                if (SettingsFocusLinks.categoryEntry?.requestFocus() == true) return@LaunchedEffect
++            }
+         }
+     }
+ 
+@@ -1042,8 +1055,10 @@ private fun TabletSettingsScreen(
+                                 }
+                             }
+                             focusRequestScope.launch {
+-                                withFrameNanos { }
+-                                SettingsFocusLinks.contentEntry?.requestFocus(FocusDirection.Down)
++                                repeat(SettingsContentFocusRetryFrames) {
++                                    withFrameNanos { }
++                                    if (SettingsFocusLinks.contentEntry?.requestFocus() == true) return@launch
++                                }
+                             }
+                         },
+                         modifier = Modifier
+@@ -1137,7 +1152,6 @@ private fun TabletSettingsScreen(
+                         .widthIn(max = if (isDesktop) 800.dp else Dp.Unspecified)
+                         .fillMaxWidth()
+                         .weight(1f)
+-                        .focusRequester(contentEntryRequester)
+                         .focusGroup(),
+                 ) {
+                     LazyColumn(
+@@ -1186,6 +1200,7 @@ private fun TabletSettingsScreen(
+                                 if (settingsSearchQuery.isBlank()) {
+                                     settingsRootContent(
+                                         isTablet = true,
++                                        firstRowModifier = Modifier.focusRequester(contentEntryRequester),
+                                         onPlaybackClick = { openInlinePage(SettingsPage.Playback) },
+                                         onAppearanceClick = { openInlinePage(SettingsPage.Appearance) },
+                                         onAdvancedClick = { openInlinePage(SettingsPage.Advanced) },

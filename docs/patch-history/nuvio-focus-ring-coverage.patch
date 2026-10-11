@@ -1,0 +1,530 @@
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/BottomSheet.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/BottomSheet.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/BottomSheet.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/BottomSheet.kt	2026-10-08 19:15:12.728455262 -0300
+@@ -112,6 +112,7 @@
+             .fillMaxWidth()
+             .padding(horizontal = NuvioTokens.Space.s8)
+             .heightIn(min = NuvioTokens.Space.s56)
++            .nuvioFocusBorder(tokens.shapes.compactCard)
+             .clip(tokens.shapes.compactCard)
+             .background(if (selected) tokens.colors.accent.copy(alpha = tokens.opacity.hover) else Color.Transparent)
+             .clickable(onClick = onClick)
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/Dialog.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/Dialog.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/Dialog.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/Dialog.kt	2026-10-08 19:15:07.540343209 -0300
+@@ -182,6 +182,7 @@
+     Row(
+         modifier = modifier
+             .fillMaxWidth()
++            .nuvioFocusBorder(tokens.shapes.compactCard)
+             .clip(tokens.shapes.compactCard)
+             .background(
+                 if (selected) {
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/DropdownChip.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/DropdownChip.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/DropdownChip.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/DropdownChip.kt	2026-10-08 19:14:53.517040495 -0300
+@@ -62,6 +62,7 @@
+     Box(modifier = modifier) {
+         Row(
+             modifier = Modifier
++                .nuvioFocusBorder(tokens.shapes.compactCard)
+                 .clip(tokens.shapes.compactCard)
+                 .background(tokens.colors.surface)
+                 .then(
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/Menu.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/Menu.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/Menu.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/Menu.kt	2026-10-08 19:15:09.895394069 -0300
+@@ -67,6 +67,7 @@
+         modifier = modifier
+             .fillMaxWidth()
+             .padding(horizontal = NuvioTokens.Space.s8)
++            .nuvioFocusBorder(tokens.shapes.compactCard)
+             .clip(tokens.shapes.compactCard)
+             .background(if (selected) tokens.colors.accent.copy(alpha = tokens.opacity.hover) else Color.Transparent)
+             .clickable(enabled = enabled, onClick = onClick)
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/NavigationBar.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/NavigationBar.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/NavigationBar.kt	2026-10-08 00:29:44.659886817 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/NavigationBar.kt	2026-10-08 19:14:59.448168501 -0300
+@@ -479,6 +479,7 @@
+                     .widthIn(max = tokens.components.navItemMaxWidth)
+                     .fillMaxWidth()
+                     .weight(1f, fill = false)
++                    .nuvioFocusBorder(tokens.components.navItemShape)
+                     .clip(tokens.components.navItemShape)
+                     .selectable(
+                         selected = selected,
+@@ -517,6 +518,7 @@
+                     .widthIn(max = tokens.components.navItemMaxWidth)
+                     .fillMaxWidth()
+                     .weight(1f, fill = false)
++                    .nuvioFocusBorder(tokens.components.navItemShape)
+                     .clip(tokens.components.navItemShape)
+                     .selectable(
+                         selected = selected,
+@@ -549,6 +551,7 @@
+                     .widthIn(max = tokens.components.navItemMaxWidth)
+                     .fillMaxWidth()
+                     .weight(1f, fill = false)
++                    .nuvioFocusBorder(tokens.components.navItemShape)
+                     .clip(tokens.components.navItemShape)
+                     .selectable(
+                         selected = selected,
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/PosterZoomActionOverlay.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/PosterZoomActionOverlay.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/PosterZoomActionOverlay.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/PosterZoomActionOverlay.kt	2026-10-08 19:16:24.097999841 -0300
+@@ -525,6 +525,7 @@
+     Row(
+         modifier = modifier
+             .fillMaxWidth()
++            .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s20))
+             .clickable(enabled = enabled, onClick = onSelected)
+             .padding(horizontal = NuvioTokens.Space.s18, vertical = NuvioTokens.Space.s16),
+         horizontalArrangement = Arrangement.spacedBy(NuvioTokens.Space.s12),
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/ShelfComponents.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/ShelfComponents.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/ShelfComponents.kt	2026-10-08 00:29:44.663801654 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/ShelfComponents.kt	2026-10-08 19:14:55.991093885 -0300
+@@ -447,6 +447,7 @@
+                 color = tokens.colors.surface,
+                 shape = RoundedCornerShape(NuvioTokens.Radius.xl),
+             )
++            .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Radius.xl))
+             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+         contentAlignment = Alignment.Center,
+     ) {
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/catalog/CatalogScreen.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/catalog/CatalogScreen.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/catalog/CatalogScreen.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/catalog/CatalogScreen.kt	2026-10-08 19:13:47.077609705 -0300
+@@ -60,6 +60,7 @@
+ import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
+ import com.nuvio.app.core.ui.desktopPosterHoverScale
+ import com.nuvio.app.core.ui.nuvioCardDepth
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.core.ui.posterCardClickable
+ import com.nuvio.app.core.ui.posterGridColumnCountForViewport
+ import com.nuvio.app.core.ui.NuvioLoadingIndicator
+@@ -387,6 +388,7 @@
+                 modifier = Modifier
+                     .fillMaxWidth()
+                     .aspectRatio(item.posterShape.catalogAspectRatio())
++                    .nuvioFocusBorder(RoundedCornerShape(cornerRadiusDp.dp))
+                     .clip(RoundedCornerShape(cornerRadiusDp.dp))
+                     .background(MaterialTheme.colorScheme.surface)
+                     .nuvioCardDepth(
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/downloads/DownloadsScreen.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/downloads/DownloadsScreen.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/downloads/DownloadsScreen.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/downloads/DownloadsScreen.kt	2026-10-08 19:16:18.054868841 -0300
+@@ -42,6 +42,7 @@
+ import com.nuvio.app.core.ui.NuvioScreenHeader
+ import com.nuvio.app.core.ui.NuvioStatusModal
+ import com.nuvio.app.core.ui.NuvioToastController
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import nuvio.composeapp.generated.resources.*
+ import org.jetbrains.compose.resources.stringResource
+ 
+@@ -355,6 +356,7 @@
+         modifier = Modifier
+             .fillMaxWidth()
+             .padding(horizontal = 12.dp, vertical = 6.dp)
++            .nuvioFocusBorder(MaterialTheme.shapes.medium)
+             .clickable(enabled = item.isPlayable, onClick = onOpen),
+         shape = MaterialTheme.shapes.medium,
+         color = MaterialTheme.colorScheme.surfaceContainerLow,
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/home/components/HomeCollectionRowSection.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/home/components/HomeCollectionRowSection.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/home/components/HomeCollectionRowSection.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/home/components/HomeCollectionRowSection.kt	2026-10-08 19:13:33.671321725 -0300
+@@ -30,6 +30,7 @@
+ import com.nuvio.app.core.ui.desktopCatalogShelfPosterBaseWidthDp
+ import com.nuvio.app.core.ui.landscapePosterWidth
+ import com.nuvio.app.core.ui.nuvioCardDepth
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.core.ui.posterCardClickable
+ import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
+ import com.nuvio.app.features.collection.Collection
+@@ -120,14 +121,15 @@
+         }
+     }
+ 
++    val shapeCorner = RoundedCornerShape(posterCardStyle.cornerRadiusDp.dp)
+     Column(
+         modifier = Modifier
++            .nuvioFocusBorder(shapeCorner)
+             .posterCardClickable(onClick = onClick, onLongClick = null)
+             .then(modifier)
+             .width(cardWidth),
+         verticalArrangement = Arrangement.spacedBy(6.dp),
+     ) {
+-        val shapeCorner = RoundedCornerShape(posterCardStyle.cornerRadiusDp.dp)
+         val imageUrl = collectionFolderCardImageUrl(folder)
+         Card(
+             modifier = Modifier
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/home/components/HomeContinueWatchingSection.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/home/components/HomeContinueWatchingSection.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/home/components/HomeContinueWatchingSection.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/home/components/HomeContinueWatchingSection.kt	2026-10-08 19:13:28.690214792 -0300
+@@ -59,6 +59,7 @@
+ import com.nuvio.app.core.ui.ScopedDisintegrationTracker
+ import com.nuvio.app.core.ui.landscapePosterHeightForWidth
+ import com.nuvio.app.core.ui.landscapePosterWidth
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.core.ui.posterCardClickable
+ import com.nuvio.app.core.ui.desktopPosterHoverScale
+ import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
+@@ -712,6 +713,7 @@
+ 
+     Box(
+         modifier = Modifier
++            .nuvioFocusBorder(RoundedCornerShape(cardMetrics.cornerRadius))
+             .posterCardClickable(
+                 onClick = onClick,
+                 onLongClick = onLongClick,
+@@ -897,6 +899,7 @@
+     val cornerRadius = rememberPosterCardStyleUiState().cornerRadiusDp.dp
+     Row(
+         modifier = Modifier
++            .nuvioFocusBorder(RoundedCornerShape(cornerRadius))
+             .posterCardClickable(onClick = onClick, onLongClick = onLongClick)
+             .width(layout.wideCardWidth)
+             .height(layout.wideCardHeight)
+@@ -1035,6 +1038,7 @@
+             modifier = Modifier
+                 .fillMaxWidth()
+                 .let { if (isDesktop) it.aspectRatio(0.675f) else it.height(layout.posterCardHeight) }
++                .nuvioFocusBorder(RoundedCornerShape(cornerRadius))
+                 .clip(RoundedCornerShape(cornerRadius))
+                 .background(MaterialTheme.colorScheme.surfaceVariant)
+                 .nuvioCardDepth(
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/home/components/PosterGrid.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/home/components/PosterGrid.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/home/components/PosterGrid.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/home/components/PosterGrid.kt	2026-10-08 19:13:33.681321940 -0300
+@@ -32,6 +32,7 @@
+ import com.nuvio.app.core.ui.SkeletonPoster
+ import com.nuvio.app.core.ui.desktopPosterHoverScale
+ import com.nuvio.app.core.ui.nuvioCardDepth
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.core.ui.posterCardClickable
+ import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
+ import com.nuvio.app.features.home.MetaPreview
+@@ -130,6 +131,7 @@
+                 modifier = Modifier
+                     .fillMaxWidth()
+                     .aspectRatio(item.posterShape.posterGridAspectRatio())
++                    .nuvioFocusBorder(RoundedCornerShape(cornerRadiusDp.dp))
+                     .clip(RoundedCornerShape(cornerRadiusDp.dp))
+                     .background(MaterialTheme.colorScheme.surface)
+                     .nuvioCardDepth(
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/library/LibraryListEditor.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/library/LibraryListEditor.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/library/LibraryListEditor.kt	2026-10-08 00:29:44.671989776 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/library/LibraryListEditor.kt	2026-10-08 19:15:04.887285920 -0300
+@@ -32,6 +32,7 @@
+ import androidx.compose.ui.text.input.ImeAction
+ import androidx.compose.ui.unit.dp
+ import com.nuvio.app.core.ui.nuvio
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.core.ui.nuvioTracksTextInput
+ import com.nuvio.app.features.tracking.LibraryListPrivacy
+ import com.nuvio.app.features.tracking.TrackingListManagementCapabilities
+@@ -100,7 +101,7 @@
+                                 border = BorderStroke(1.dp, if (selected) tokens.colors.accent.copy(alpha = 0.5f) else tokens.colors.borderSubtle),
+                             ) {
+                                 Row(
+-                                    modifier = Modifier.selectable(selected, enabled = !state.isPending, role = Role.RadioButton) {
++                                    modifier = Modifier.nuvioFocusBorder(tokens.shapes.compactCard).selectable(selected, enabled = !state.isPending, role = Role.RadioButton) {
+                                         onPrivacyChange(privacy)
+                                     }.padding(horizontal = 14.dp, vertical = 14.dp),
+                                     horizontalArrangement = Arrangement.spacedBy(10.dp),
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/search/SearchScreen.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/search/SearchScreen.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/search/SearchScreen.kt	2026-10-08 18:27:48.109560901 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/search/SearchScreen.kt	2026-10-08 19:13:47.046609039 -0300
+@@ -529,6 +529,7 @@
+     Row(
+         modifier = modifier
+             .fillMaxWidth()
++            .nuvioFocusBorder(RoundedCornerShape(16.dp))
+             .clickable(onClick = onSearchPress)
+             .padding(vertical = 2.dp)
+             .background(
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/AppearanceThemePicker.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/AppearanceThemePicker.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/AppearanceThemePicker.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/AppearanceThemePicker.kt	2026-10-08 19:13:39.453445900 -0300
+@@ -42,6 +42,7 @@
+ import com.nuvio.app.core.ui.accentBrush
+ import com.nuvio.app.core.ui.labelRes
+ import com.nuvio.app.core.ui.nuvio
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.features.membership.MemberAccessRepository
+ import com.nuvio.app.features.membership.availableAppThemes
+ import com.nuvio.app.features.profiles.ProfileRepository
+@@ -123,6 +124,7 @@
+     val palette = remember(theme, customColors) { ThemeColors.getColorPalette(theme, customColors) }
+     Column(
+         modifier = modifier
++            .nuvioFocusBorder(tokens.shapes.compactCard)
+             .clip(tokens.shapes.compactCard)
+             .selectable(selected = isSelected, role = Role.RadioButton, onClick = onClick)
+             .padding(horizontal = NuvioTokens.Space.s4, vertical = NuvioTokens.Space.s8),
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/ContinueWatchingSettingsPage.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/ContinueWatchingSettingsPage.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/ContinueWatchingSettingsPage.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/ContinueWatchingSettingsPage.kt	2026-10-08 19:13:47.077609705 -0300
+@@ -31,6 +31,7 @@
+ import androidx.compose.ui.unit.dp
+ import com.nuvio.app.core.ui.DialogOption
+ import com.nuvio.app.core.ui.DialogSurface
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.features.home.components.ContinueWatchingStylePreview
+ import com.nuvio.app.features.watchprogress.ContinueWatchingPreferencesRepository
+ import com.nuvio.app.features.watchprogress.ContinueWatchingSectionStyle
+@@ -237,6 +238,7 @@
+     Surface(
+         modifier = Modifier
+             .fillMaxWidth()
++            .nuvioFocusBorder(RoundedCornerShape(12.dp))
+             .clickable(onClick = onClick),
+         color = if (selected) {
+             MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/CustomThemeEditor.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/CustomThemeEditor.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/CustomThemeEditor.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/CustomThemeEditor.kt	2026-10-08 19:13:39.453445900 -0300
+@@ -46,6 +46,7 @@
+ import com.nuvio.app.core.ui.dismissNuvioBottomSheet
+ import com.nuvio.app.core.ui.formatHexColor
+ import com.nuvio.app.core.ui.nuvio
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.core.ui.parseHexColor
+ import kotlinx.coroutines.launch
+ import nuvio.composeapp.generated.resources.Res
+@@ -222,6 +223,7 @@
+     val tokens = MaterialTheme.nuvio
+     Column(
+         modifier = modifier
++            .nuvioFocusBorder(tokens.shapes.compactCard)
+             .clip(tokens.shapes.compactCard)
+             .border(
+                 tokens.borders.medium,
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/DebridSettingsPage.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/DebridSettingsPage.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/DebridSettingsPage.kt	2026-10-08 00:29:44.672131905 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/DebridSettingsPage.kt	2026-10-08 19:15:42.965108949 -0300
+@@ -22,6 +22,8 @@
+ import com.nuvio.app.core.ui.DialogOption
+ import com.nuvio.app.core.ui.DialogSurface
+ import com.nuvio.app.core.ui.NuvioLoadingIndicator
++import com.nuvio.app.core.ui.NuvioTokens
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.core.ui.nuvioTracksTextInput
+ import androidx.compose.material3.ExperimentalMaterial3Api
+ import androidx.compose.material3.IconButton
+@@ -711,6 +713,7 @@
+     Row(
+         modifier = Modifier
+             .fillMaxWidth()
++            .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4))
+             .clickable(enabled = enabled, onClick = onClick)
+             .padding(horizontal = horizontalPadding, vertical = verticalPadding),
+         verticalAlignment = Alignment.CenterVertically,
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/LicensesAttributionsPage.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/LicensesAttributionsPage.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/LicensesAttributionsPage.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/LicensesAttributionsPage.kt	2026-10-08 19:15:52.797321738 -0300
+@@ -12,6 +12,7 @@
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.size
+ import androidx.compose.foundation.lazy.LazyListScope
++import androidx.compose.foundation.shape.RoundedCornerShape
+ import androidx.compose.material.icons.Icons
+ import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+ import androidx.compose.material3.HorizontalDivider
+@@ -31,6 +32,8 @@
+ import com.nuvio.app.core.ui.NuvioAsyncImage as AsyncImage
+ import com.nuvio.app.core.ui.NuvioScreen
+ import com.nuvio.app.core.ui.NuvioScreenHeader
++import com.nuvio.app.core.ui.NuvioTokens
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.features.cloud.PremiumizeCloudLibraryPosterUrl
+ import com.nuvio.app.features.cloud.TorboxCloudLibraryPosterUrl
+ import com.nuvio.app.features.cloud.cloudLibraryDisplayArtworkUrl
+@@ -254,6 +257,7 @@
+     Row(
+         modifier = Modifier
+             .fillMaxWidth()
++            .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4))
+             .clickable(onClick = onOpen)
+             .padding(horizontal = horizontalPadding, vertical = verticalPadding),
+         verticalAlignment = Alignment.Top,
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/MetaScreenSettingsPage.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/MetaScreenSettingsPage.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/MetaScreenSettingsPage.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/MetaScreenSettingsPage.kt	2026-10-08 19:13:47.077609705 -0300
+@@ -57,6 +57,7 @@
+ import com.nuvio.app.core.build.TrailerPlaybackMode
+ import com.nuvio.app.core.ui.Chip
+ import com.nuvio.app.core.ui.NuvioActionLabel
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.features.details.MetaEpisodeCardStyle
+ import com.nuvio.app.features.details.MetaScreenBackgroundMode
+ import com.nuvio.app.features.details.MetaScreenSectionItem
+@@ -500,6 +501,7 @@
+     Surface(
+         modifier = Modifier
+             .fillMaxWidth()
++            .nuvioFocusBorder(RoundedCornerShape(12.dp))
+             .selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
+         color = if (selected) {
+             MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt	2026-10-08 18:27:48.109643629 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt	2026-10-08 19:16:40.702359980 -0300
+@@ -50,6 +50,7 @@
+ import androidx.compose.foundation.focusGroup
+ import androidx.compose.ui.focus.focusProperties
+ import androidx.compose.ui.focus.focusRequester
++import androidx.compose.ui.focus.focusRestorer
+ import androidx.compose.ui.unit.Dp
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+@@ -1145,6 +1146,11 @@
+                 }
+ 
+                 val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
++                // cwrneirOS: closing/reopening a submenu should start at the top; Root keeps
++                // its position. Uses requestScrollToItem so it applies before the next measure.
++                LaunchedEffect(page) {
++                    if (page != SettingsPage.Root) listState.requestScrollToItem(0)
++                }
+                 ScreenActivityEffect(listState) { active ->
+                     if (!active) listState.stopScroll()
+                 }
+@@ -1190,6 +1196,7 @@
+                         .fillMaxWidth()
+                         .weight(1f)
+                         .nuvioDebugFocusGroupTag("content-group")
++                        .focusRestorer()
+                         .focusGroup()
+                         .focusRequester(contentGroupRequester)
+                         .focusProperties {
+@@ -1202,6 +1209,7 @@
+                         state = listState,
+                         modifier = Modifier
+                             .fillMaxSize()
++                            .focusRestorer()
+                             .nestedScroll(rootSearchRevealConnection),
+                         contentPadding = PaddingValues(
+                             start = 40.dp,
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/StreamsSettingsPage.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/StreamsSettingsPage.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/StreamsSettingsPage.kt	2026-10-08 00:29:44.672551901 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/StreamsSettingsPage.kt	2026-10-08 19:15:31.201854513 -0300
+@@ -16,6 +16,7 @@
+ import androidx.compose.foundation.lazy.LazyColumn
+ import androidx.compose.foundation.lazy.LazyListScope
+ import androidx.compose.foundation.lazy.items
++import androidx.compose.foundation.shape.RoundedCornerShape
+ import androidx.compose.material.icons.Icons
+ import androidx.compose.material.icons.rounded.Delete
+ import androidx.compose.material.icons.rounded.Visibility
+@@ -49,6 +50,7 @@
+ import androidx.lifecycle.compose.collectAsStateWithLifecycle
+ import com.nuvio.app.core.ui.NuvioTokens
+ import com.nuvio.app.core.ui.nuvio
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.core.ui.nuvioTracksTextInput
+ import com.nuvio.app.features.streams.STREAM_BADGE_IMPORT_LIMIT
+ import com.nuvio.app.features.streams.StreamBadgeChip
+@@ -232,7 +234,7 @@
+         )
+         StreamBackgroundMode.entries.forEach { mode ->
+             Row(
+-                modifier = Modifier.fillMaxWidth().selectable(
++                modifier = Modifier.fillMaxWidth().nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4)).selectable(
+                     selected = mode == selectedMode,
+                     role = Role.RadioButton,
+                     onClick = { onModeSelected(mode) },
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SupportersContributorsPage.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SupportersContributorsPage.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SupportersContributorsPage.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SupportersContributorsPage.kt	2026-10-08 19:16:01.631513018 -0300
+@@ -54,6 +54,7 @@
+ import com.nuvio.app.core.ui.NuvioScreen
+ import com.nuvio.app.core.ui.NuvioScreenHeader
+ import com.nuvio.app.core.ui.NuvioSurfaceCard
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.features.addons.httpRequestRaw
+ import com.nuvio.app.features.membership.MembershipOverviewRepository
+ import kotlinx.coroutines.launch
+@@ -711,6 +712,7 @@
+     Row(
+         modifier = Modifier
+             .fillMaxWidth()
++            .nuvioFocusBorder(RoundedCornerShape(18.dp))
+             .clip(RoundedCornerShape(18.dp))
+             .clickable(onClick = onClick)
+             .padding(vertical = 8.dp),
+@@ -751,6 +753,7 @@
+     Row(
+         modifier = Modifier
+             .fillMaxWidth()
++            .nuvioFocusBorder(RoundedCornerShape(18.dp))
+             .clip(RoundedCornerShape(18.dp))
+             .clickable(onClick = onClick)
+             .padding(vertical = 8.dp),
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/ThemeColorPicker.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/ThemeColorPicker.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/ThemeColorPicker.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/ThemeColorPicker.kt	2026-10-08 19:13:39.453445900 -0300
+@@ -34,6 +34,7 @@
+ import com.nuvio.app.core.ui.NuvioTokens
+ import com.nuvio.app.core.ui.formatHexColor
+ import com.nuvio.app.core.ui.nuvio
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import kotlin.math.roundToInt
+ import nuvio.composeapp.generated.resources.Res
+ import nuvio.composeapp.generated.resources.custom_theme_brightness
+@@ -72,6 +73,7 @@
+             colorSwatches.forEach { swatch ->
+                 Box(
+                     Modifier
++                        .nuvioFocusBorder(CircleShape)
+                         .size(NuvioTokens.Space.s48)
+                         .clip(CircleShape)
+                         .selectable(color == swatch, role = Role.RadioButton, onClick = { onColorChanged(swatch) })
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/TrackingProviderCards.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/TrackingProviderCards.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/TrackingProviderCards.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/TrackingProviderCards.kt	2026-10-08 19:16:08.840669174 -0300
+@@ -58,6 +58,7 @@
+ import com.nuvio.app.core.ui.NuvioLoadingIndicator
+ import com.nuvio.app.core.ui.NuvioTokens
+ import com.nuvio.app.core.ui.nuvio
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.features.profiles.ProfileRepository
+ import com.nuvio.app.features.simkl.SimklAuthError
+ import com.nuvio.app.features.simkl.SimklAuthRepository
+@@ -602,6 +603,7 @@
+     Surface(
+         modifier = Modifier
+             .fillMaxWidth()
++            .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Radius.md))
+             .clickable(onClick = onCopy),
+         shape = RoundedCornerShape(NuvioTokens.Radius.md),
+         color = Color.White.copy(alpha = 0.12f),
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/UpdateChannelSettings.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/UpdateChannelSettings.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/UpdateChannelSettings.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/UpdateChannelSettings.kt	2026-10-08 19:15:23.162680719 -0300
+@@ -8,6 +8,7 @@
+ import androidx.compose.foundation.rememberScrollState
+ import androidx.compose.foundation.selection.selectable
+ import androidx.compose.foundation.selection.selectableGroup
++import androidx.compose.foundation.shape.RoundedCornerShape
+ import androidx.compose.foundation.verticalScroll
+ import androidx.compose.material.icons.Icons
+ import androidx.compose.material.icons.rounded.SystemUpdate
+@@ -28,7 +29,9 @@
+ import com.nuvio.app.core.ui.DialogButton
+ import com.nuvio.app.core.ui.DialogButtons
+ import com.nuvio.app.core.ui.DialogSurface
++import com.nuvio.app.core.ui.NuvioTokens
+ import com.nuvio.app.core.ui.nuvio
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.features.updater.AppUpdaterPlatform
+ import com.nuvio.app.features.updater.UpdateChannel
+ import com.nuvio.app.features.updater.UpdatePreferences
+@@ -67,7 +70,7 @@
+             ) {
+                 UpdateChannel.entries.filter { it != UpdateChannel.ALL_RELEASES }.forEach { option ->
+                     Row(
+-                        modifier = Modifier.fillMaxWidth().selectable(
++                        modifier = Modifier.fillMaxWidth().nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4)).selectable(
+                             selected = option == channel,
+                             role = Role.RadioButton,
+                             onClick = {

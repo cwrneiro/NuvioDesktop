@@ -1,0 +1,145 @@
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt
+index 4164e2a..4fa72a1 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt
+@@ -56,6 +56,7 @@ import androidx.compose.ui.draw.clip
+ import androidx.compose.ui.focus.FocusRequester
+ import androidx.compose.ui.focus.focusProperties
+ import androidx.compose.ui.focus.focusRequester
++import androidx.compose.ui.geometry.Rect
+ import androidx.compose.ui.graphics.Brush
+ import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.text.TextStyle
+@@ -862,6 +863,11 @@ internal fun DesktopHoverSidebar(
+                             down = searchFocusRequester
+                             if (selectedTab == AppScreenTab.Settings) {
+                                 SettingsFocusLinks.categoryEntry?.let { right = it }
++                                // cwrneirOS round 4c: while Settings is open the rail
++                                // items are non-candidates for 2D search (every
++                                // Settings-tab rail edge is explicit), so Down at the
++                                // bottom of the content pane cannot leak onto the rail.
++                                focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
+                             }
+                         }
+                         .nuvioDebugFocusTag("rail-home"),
+@@ -885,6 +891,9 @@ internal fun DesktopHoverSidebar(
+                             down = libraryFocusRequester
+                             if (selectedTab == AppScreenTab.Settings) {
+                                 SettingsFocusLinks.categoryEntry?.let { right = it }
++                                // cwrneirOS round 4c: non-candidate while Settings is
++                                // open (see rail-home).
++                                focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
+                             }
+                         }
+                         .nuvioDebugFocusTag("rail-search"),
+@@ -908,6 +917,9 @@ internal fun DesktopHoverSidebar(
+                             down = settingsFocusRequester
+                             if (selectedTab == AppScreenTab.Settings) {
+                                 SettingsFocusLinks.categoryEntry?.let { right = it }
++                                // cwrneirOS round 4c: non-candidate while Settings is
++                                // open (see rail-home).
++                                focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
+                             }
+                         }
+                         .nuvioDebugFocusTag("rail-library"),
+@@ -931,6 +943,9 @@ internal fun DesktopHoverSidebar(
+                             down = FocusRequester.Cancel
+                             if (selectedTab == AppScreenTab.Settings) {
+                                 SettingsFocusLinks.categoryEntry?.let { right = it }
++                                // cwrneirOS round 4c: non-candidate while Settings is
++                                // open (see rail-home).
++                                focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
+                             }
+                         }
+                         .nuvioDebugFocusTag("rail-settings"),
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt
+index ad3e28b..b245699 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt
+@@ -104,7 +104,13 @@ internal fun SettingsGroup(
+         isTablet = isTablet,
+         modifier = modifier,
+     ) {
+-        Column(content = content)
++        Column(
++            // nuvioFocusBorder rings inflate up to 4dp outside their row and the
++            // card Surface clips to its rounded shape; this 4dp breathing room
++            // keeps the first/last rows' top/bottom ring strokes inside the clip.
++            modifier = Modifier.padding(vertical = NuvioTokens.Space.s4),
++            content = content,
++        )
+     }
+ }
+ 
+@@ -274,7 +280,13 @@ internal fun SettingsNavigationRow(
+             .padding(horizontal = NuvioTokens.Space.s4)
+             .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4))
+             .clickable(enabled = enabled, onClick = onClick)
+-            .padding(horizontal = horizontalPadding, vertical = verticalPadding)
++            // Reclaim the 4dp inset inside the content padding so text and
++            // trailing content keep their original absolute position
++            // (SettingsGroupDivider is pinned to that alignment).
++            .padding(
++                horizontal = horizontalPadding - NuvioTokens.Space.s4,
++                vertical = verticalPadding,
++            )
+             .alpha(if (enabled) NuvioTokens.Opacity.visible else tokens.opacity.medium),
+         horizontalArrangement = Arrangement.Start,
+         verticalAlignment = Alignment.CenterVertically,
+@@ -353,9 +365,17 @@ internal fun SettingsSwitchRow(
+     Row(
+         modifier = Modifier
+             .fillMaxWidth()
++            // Match SettingsNavigationRow: inset the focusable box 4dp before
++            // nuvioFocusBorder (the ring draws up to 4dp outside the node) so
++            // the enclosing SettingsCard clip cannot shave the left/right ring
++            // strokes; content padding drops by the same 4dp so nothing shifts.
++            .padding(horizontal = NuvioTokens.Space.s4)
+             .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4))
+             .clickable(enabled = enabled) { onCheckedChange(!checked) }
+-            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
++            .padding(
++                horizontal = horizontalPadding - NuvioTokens.Space.s4,
++                vertical = verticalPadding,
++            ),
+         horizontalArrangement = Arrangement.Start,
+         verticalAlignment = Alignment.CenterVertically,
+     ) {
+diff --git a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt
+index b493771..9f15b28 100644
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt
+@@ -45,6 +45,7 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+ import androidx.compose.runtime.snapshotFlow
+ import androidx.compose.runtime.withFrameNanos
+ import androidx.compose.ui.geometry.Offset
++import androidx.compose.ui.focus.FocusDirection
+ import androidx.compose.ui.focus.FocusRequester
+ import androidx.compose.foundation.focusGroup
+ import androidx.compose.ui.focus.focusProperties
+@@ -57,6 +58,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+ import androidx.compose.ui.input.nestedscroll.nestedScroll
+ import androidx.compose.ui.platform.LocalDensity
++import androidx.compose.ui.platform.LocalFocusManager
+ import androidx.compose.ui.platform.LocalHapticFeedback
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.unit.dp
+@@ -966,6 +968,7 @@ private fun TabletSettingsScreen(
+     val contentEntryRequester = remember { FocusRequester() }
+     val backRequester = remember { FocusRequester() }
+     val focusRequestScope = rememberCoroutineScope()
++    val focusManager = LocalFocusManager.current
+     val useNativeNavigation = LocalUseNativeNavigation.current
+     val nativeNavigationBarHidden = LocalNativeNavigationBarHidden.current
+ 
+@@ -1007,6 +1010,9 @@ private fun TabletSettingsScreen(
+                 if (backRequester.requestFocus()) {
+                     withFrameNanos { }
+                     if (PlatformFocusPresence.hasFocus && !PlatformFocusPresence.anchorActive) {
++                        // cwrneirOS round 4c: land on the first content entry — the
++                        // header back button stays one Up away (retest-4/5 feedback).
++                        focusManager.moveFocus(FocusDirection.Down)
+                         return@LaunchedEffect
+                     }
+                 }

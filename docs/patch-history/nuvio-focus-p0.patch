@@ -1,0 +1,479 @@
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt	2026-10-08 00:29:44.686851996 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/AppShellComponents.kt	2026-10-08 00:29:06.368033297 -0300
+@@ -72,6 +72,8 @@
+ import com.nuvio.app.core.ui.NuvioTokens
+ import com.nuvio.app.core.ui.SettingsFocusLinks
+ import com.nuvio.app.core.ui.nuvio
++import com.nuvio.app.core.ui.CorridorOrientation
++import com.nuvio.app.core.ui.corridorEdges
+ import com.nuvio.app.core.ui.nuvioDebugFocusTag
+ import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.features.cloud.CloudLibraryContentType
+@@ -745,6 +747,14 @@
+     SettingsFocusLinks.railEntries[AppScreenTab.Search] = searchFocusRequester
+     SettingsFocusLinks.railEntries[AppScreenTab.Library] = libraryFocusRequester
+     SettingsFocusLinks.railEntries[AppScreenTab.Settings] = settingsFocusRequester
++    // cwrneirOS consolidation: declarative rail corridor (see corridorEdges).
++    val railRequesters = listOf(
++        avatarFocusRequester,
++        homeFocusRequester,
++        searchFocusRequester,
++        libraryFocusRequester,
++        settingsFocusRequester,
++    )
+     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+     val profileState by ProfileRepository.state.collectAsStateWithLifecycle()
+     val avatars by AvatarRepository.avatars.collectAsStateWithLifecycle()
+@@ -802,18 +812,23 @@
+                     .padding(horizontal = 6.dp, vertical = 4.dp)
+                     .nuvioFocusBorder(RoundedCornerShape(16.dp))
+                     .focusRequester(avatarFocusRequester)
+-                    .focusProperties {
+-                        // Corridor top end. While the profile switcher stack is
+-                        // visible, Down keeps the default geometric edge into it.
+-                        up = FocusRequester.Cancel
+-                        down = if (profileStackVisible) FocusRequester.Default else homeFocusRequester
+-                        // cwrneirOS round 4b: Right on the Settings tab goes to the
+-                        // active category (a geometric jump into the top bar left
+-                        // the ring invisible).
+-                        if (selectedTab == AppScreenTab.Settings) {
+-                            SettingsFocusLinks.categoryEntry?.let { right = it }
+-                        }
+-                    }
++                    .focusProperties(
++                        // Corridor top end (up = Cancel). While the profile switcher
++                        // stack is visible, Down keeps the default geometric edge into it.
++                        corridorEdges(
++                            orientation = CorridorOrientation.Vertical,
++                            requesters = railRequesters,
++                            index = 0,
++                        ) {
++                            if (profileStackVisible) down = FocusRequester.Default
++                            // cwrneirOS round 4b: Right on the Settings tab goes to the
++                            // active category (a geometric jump into the top bar left
++                            // the ring invisible).
++                            if (selectedTab == AppScreenTab.Settings) {
++                                SettingsFocusLinks.categoryEntry?.let { right = it }
++                            }
++                        },
++                    )
+                     .nuvioDebugFocusTag("rail-avatar")
+                     .clickable(
+                         interactionSource = remember { MutableInteractionSource() },
+@@ -858,18 +873,22 @@
+                     onClick = { selectTab(AppScreenTab.Home) },
+                     modifier = Modifier
+                         .focusRequester(homeFocusRequester)
+-                        .focusProperties {
+-                            up = avatarFocusRequester
+-                            down = searchFocusRequester
+-                            if (selectedTab == AppScreenTab.Settings) {
+-                                SettingsFocusLinks.categoryEntry?.let { right = it }
+-                                // cwrneirOS round 4c: while Settings is open the rail
+-                                // items are non-candidates for 2D search (every
+-                                // Settings-tab rail edge is explicit), so Down at the
+-                                // bottom of the content pane cannot leak onto the rail.
+-                                focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
+-                            }
+-                        }
++                        .focusProperties(
++                            corridorEdges(
++                                orientation = CorridorOrientation.Vertical,
++                                requesters = railRequesters,
++                                index = 1,
++                            ) {
++                                if (selectedTab == AppScreenTab.Settings) {
++                                    SettingsFocusLinks.categoryEntry?.let { right = it }
++                                    // cwrneirOS round 4c: while Settings is open the rail
++                                    // items are non-candidates for 2D search (every
++                                    // Settings-tab rail edge is explicit), so Down at the
++                                    // bottom of the content pane cannot leak onto the rail.
++                                    focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
++                                }
++                            },
++                        )
+                         .nuvioDebugFocusTag("rail-home"),
+                 ) { color ->
+                     Icon(
+@@ -886,16 +905,20 @@
+                     onClick = { selectTab(AppScreenTab.Search) },
+                     modifier = Modifier
+                         .focusRequester(searchFocusRequester)
+-                        .focusProperties {
+-                            up = homeFocusRequester
+-                            down = libraryFocusRequester
+-                            if (selectedTab == AppScreenTab.Settings) {
+-                                SettingsFocusLinks.categoryEntry?.let { right = it }
+-                                // cwrneirOS round 4c: non-candidate while Settings is
+-                                // open (see rail-home).
+-                                focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
+-                            }
+-                        }
++                        .focusProperties(
++                            corridorEdges(
++                                orientation = CorridorOrientation.Vertical,
++                                requesters = railRequesters,
++                                index = 2,
++                            ) {
++                                if (selectedTab == AppScreenTab.Settings) {
++                                    SettingsFocusLinks.categoryEntry?.let { right = it }
++                                    // cwrneirOS round 4c: non-candidate while Settings is
++                                    // open (see rail-home).
++                                    focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
++                                }
++                            },
++                        )
+                         .nuvioDebugFocusTag("rail-search"),
+                 ) { color ->
+                     Icon(
+@@ -912,16 +935,20 @@
+                     onClick = { selectTab(AppScreenTab.Library) },
+                     modifier = Modifier
+                         .focusRequester(libraryFocusRequester)
+-                        .focusProperties {
+-                            up = searchFocusRequester
+-                            down = settingsFocusRequester
+-                            if (selectedTab == AppScreenTab.Settings) {
+-                                SettingsFocusLinks.categoryEntry?.let { right = it }
+-                                // cwrneirOS round 4c: non-candidate while Settings is
+-                                // open (see rail-home).
+-                                focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
+-                            }
+-                        }
++                        .focusProperties(
++                            corridorEdges(
++                                orientation = CorridorOrientation.Vertical,
++                                requesters = railRequesters,
++                                index = 3,
++                            ) {
++                                if (selectedTab == AppScreenTab.Settings) {
++                                    SettingsFocusLinks.categoryEntry?.let { right = it }
++                                    // cwrneirOS round 4c: non-candidate while Settings is
++                                    // open (see rail-home).
++                                    focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
++                                }
++                            },
++                        )
+                         .nuvioDebugFocusTag("rail-library"),
+                 ) { color ->
+                     Icon(
+@@ -938,16 +965,20 @@
+                     onClick = { selectTab(AppScreenTab.Settings) },
+                     modifier = Modifier
+                         .focusRequester(settingsFocusRequester)
+-                        .focusProperties {
+-                            up = libraryFocusRequester
+-                            down = FocusRequester.Cancel
+-                            if (selectedTab == AppScreenTab.Settings) {
+-                                SettingsFocusLinks.categoryEntry?.let { right = it }
+-                                // cwrneirOS round 4c: non-candidate while Settings is
+-                                // open (see rail-home).
+-                                focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
+-                            }
+-                        }
++                        .focusProperties(
++                            corridorEdges(
++                                orientation = CorridorOrientation.Vertical,
++                                requesters = railRequesters,
++                                index = 4,
++                            ) {
++                                if (selectedTab == AppScreenTab.Settings) {
++                                    SettingsFocusLinks.categoryEntry?.let { right = it }
++                                    // cwrneirOS round 4c: non-candidate while Settings is
++                                    // open (see rail-home).
++                                    focusRect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
++                                }
++                            },
++                        )
+                         .nuvioDebugFocusTag("rail-settings"),
+                 ) { color ->
+                     Icon(
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/ArrowKeyNav.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/ArrowKeyNav.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/ArrowKeyNav.kt	1969-12-31 21:00:00.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/ArrowKeyNav.kt	2026-10-08 00:24:13.252527925 -0300
+@@ -0,0 +1,19 @@
++package com.nuvio.app.core.ui
++
++internal enum class NuvioNavKey { Left, Right, Up, Down }
++
++/**
++ * True when an arrow press should be consumed for focus navigation.
++ *
++ * Left/Right always belong to the caret while any text field is focused.
++ * Up/Down belong to the caret only in a multiline field; in a single-line
++ * field they move nothing and must still traverse focus.
++ */
++internal fun shouldConsumeArrowForFocusNav(
++    key: NuvioNavKey,
++    textFieldActive: Boolean,
++    multilineFieldActive: Boolean,
++): Boolean = when (key) {
++    NuvioNavKey.Left, NuvioNavKey.Right -> !textFieldActive
++    NuvioNavKey.Up, NuvioNavKey.Down -> !multilineFieldActive
++}
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/FocusCorridor.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/FocusCorridor.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/FocusCorridor.kt	1969-12-31 21:00:00.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/FocusCorridor.kt	2026-10-08 00:28:17.833954847 -0300
+@@ -0,0 +1,44 @@
++package com.nuvio.app.core.ui
++
++import androidx.compose.ui.focus.FocusProperties
++import androidx.compose.ui.focus.FocusRequester
++
++/** cwrneirOS focus corridor: a declarative 1-D chain of focus stops. */
++internal enum class CorridorOrientation { Vertical, Horizontal }
++
++/**
++ * Builds the [FocusProperties] scope for item [index] of a 1-D corridor.
++ *
++ * - Vertical: `up`/`down` point at the previous/next requester; Horizontal:
++ *   `left`/`right`.
++ * - The first/last item fall back to [start]/[end] (both default to
++ *   [FocusRequester.Cancel]).
++ * - [overrideEdges] runs LAST inside the same properties block, so caller
++ *   edges (e.g. the Settings-tab Right redirect, the avatar's profile-stack
++ *   Down) always win over the corridor's generated edges.
++ *
++ * Precedence note (Compose focus properties are fetched into ONE instance;
++ * per property, the outermost `focusProperties` in the modifier chain wins):
++ * do NOT chain a second `.focusProperties { }` after this call — the outer
++ * block would discard the override. Pass overrides through [overrideEdges].
++ */
++internal fun corridorEdges(
++    orientation: CorridorOrientation,
++    requesters: List<FocusRequester>,
++    index: Int,
++    start: FocusRequester = FocusRequester.Cancel,
++    end: FocusRequester = FocusRequester.Cancel,
++    overrideEdges: (FocusProperties.() -> Unit)? = null,
++): FocusProperties.() -> Unit = {
++    when (orientation) {
++        CorridorOrientation.Vertical -> {
++            up = requesters.getOrNull(index - 1) ?: start
++            down = requesters.getOrNull(index + 1) ?: end
++        }
++        CorridorOrientation.Horizontal -> {
++            left = requesters.getOrNull(index - 1) ?: start
++            right = requesters.getOrNull(index + 1) ?: end
++        }
++    }
++    overrideEdges?.invoke(this)
++}
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/NuvioFocusable.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/NuvioFocusable.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/NuvioFocusable.kt	2026-10-08 00:29:44.683561889 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/NuvioFocusable.kt	2026-10-08 00:24:25.130791130 -0300
+@@ -14,6 +14,7 @@
+ import androidx.compose.ui.graphics.drawOutline
+ import androidx.compose.ui.graphics.drawscope.Stroke
+ import androidx.compose.ui.graphics.drawscope.translate
++import androidx.compose.ui.semantics.semantics
+ import androidx.compose.ui.unit.Dp
+ import androidx.compose.ui.unit.dp
+ 
+@@ -51,6 +52,7 @@
+     var focused by remember { mutableStateOf(false) }
+     val tokens = MaterialTheme.nuvio
+     this
++        .semantics { nuvioHasFocusRing = true }
+         .onFocusChanged { focused = it.hasFocus }
+         .drawBehind {
+             if (!focused) return@drawBehind
+@@ -75,11 +77,11 @@
+  * target. Pull `nuvio-focus:` lines from the unit journal; removed at closeout.
+  */
+ fun Modifier.nuvioDebugFocusTag(label: String): Modifier =
+-    onFocusChanged { if (it.isFocused) println("nuvio-focus: $label") }
++    onFocusChanged { if (it.isFocused) NuvioFocusDiagnostics.log("nuvio-focus: $label") }
+ 
+ /**
+  * cwrneirOS retest-4b diagnostic for focus groups (canFocus=false containers):
+  * prints when focus is anywhere inside this subtree.
+  */
+ fun Modifier.nuvioDebugFocusGroupTag(label: String): Modifier =
+-    onFocusChanged { if (it.hasFocus) println("nuvio-focus: $label *") }
++    onFocusChanged { if (it.hasFocus) NuvioFocusDiagnostics.log("nuvio-focus: $label *") }
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/NuvioFocusDiagnostics.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/NuvioFocusDiagnostics.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/NuvioFocusDiagnostics.kt	1969-12-31 21:00:00.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/NuvioFocusDiagnostics.kt	2026-10-08 00:24:14.677559502 -0300
+@@ -0,0 +1,16 @@
++package com.nuvio.app.core.ui
++
++import androidx.compose.ui.semantics.SemanticsPropertyKey
++import androidx.compose.ui.semantics.SemanticsPropertyReceiver
++
++/** cwrneirOS: single switch for focus diagnostics. Set enabled = false at closeout. */
++internal object NuvioFocusDiagnostics {
++    var enabled: Boolean = true
++    fun log(message: String) {
++        if (enabled) println(message)
++    }
++}
++
++/** cwrneirOS: semantics marker that a node draws a focus ring (headless-testable). */
++val FocusRingSemantics = SemanticsPropertyKey<Boolean>("NuvioFocusRing")
++var SemanticsPropertyReceiver.nuvioHasFocusRing by FocusRingSemantics
+diff -ruN a/composeApp/src/commonTest/kotlin/com/nuvio/app/core/ui/ArrowKeyNavTest.kt b/composeApp/src/commonTest/kotlin/com/nuvio/app/core/ui/ArrowKeyNavTest.kt
+--- a/composeApp/src/commonTest/kotlin/com/nuvio/app/core/ui/ArrowKeyNavTest.kt	1969-12-31 21:00:00.000000000 -0300
++++ b/composeApp/src/commonTest/kotlin/com/nuvio/app/core/ui/ArrowKeyNavTest.kt	2026-10-08 00:24:19.060656620 -0300
+@@ -0,0 +1,94 @@
++package com.nuvio.app.core.ui
++
++import kotlin.test.Test
++import kotlin.test.assertFalse
++import kotlin.test.assertTrue
++
++class ArrowKeyNavTest {
++
++    @Test
++    fun `left and right traverse focus when no text field is active`() {
++        assertTrue(
++            shouldConsumeArrowForFocusNav(
++                NuvioNavKey.Left,
++                textFieldActive = false,
++                multilineFieldActive = false,
++            ),
++        )
++        assertTrue(
++            shouldConsumeArrowForFocusNav(
++                NuvioNavKey.Right,
++                textFieldActive = false,
++                multilineFieldActive = false,
++            ),
++        )
++    }
++
++    @Test
++    fun `left and right belong to the caret while a text field is active`() {
++        assertFalse(
++            shouldConsumeArrowForFocusNav(
++                NuvioNavKey.Left,
++                textFieldActive = true,
++                multilineFieldActive = false,
++            ),
++        )
++        assertFalse(
++            shouldConsumeArrowForFocusNav(
++                NuvioNavKey.Right,
++                textFieldActive = true,
++                multilineFieldActive = false,
++            ),
++        )
++    }
++
++    @Test
++    fun `up and down traverse focus in a single line field`() {
++        assertTrue(
++            shouldConsumeArrowForFocusNav(
++                NuvioNavKey.Up,
++                textFieldActive = false,
++                multilineFieldActive = false,
++            ),
++        )
++        assertTrue(
++            shouldConsumeArrowForFocusNav(
++                NuvioNavKey.Down,
++                textFieldActive = false,
++                multilineFieldActive = false,
++            ),
++        )
++        assertTrue(
++            shouldConsumeArrowForFocusNav(
++                NuvioNavKey.Up,
++                textFieldActive = true,
++                multilineFieldActive = false,
++            ),
++        )
++        assertTrue(
++            shouldConsumeArrowForFocusNav(
++                NuvioNavKey.Down,
++                textFieldActive = true,
++                multilineFieldActive = false,
++            ),
++        )
++    }
++
++    @Test
++    fun `up and down belong to the caret in a multiline field`() {
++        assertFalse(
++            shouldConsumeArrowForFocusNav(
++                NuvioNavKey.Up,
++                textFieldActive = true,
++                multilineFieldActive = true,
++            ),
++        )
++        assertFalse(
++            shouldConsumeArrowForFocusNav(
++                NuvioNavKey.Down,
++                textFieldActive = true,
++                multilineFieldActive = true,
++            ),
++        )
++    }
++}
+diff -ruN a/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/PlatformKeyboardNavigation.desktop.kt b/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/PlatformKeyboardNavigation.desktop.kt
+--- a/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/PlatformKeyboardNavigation.desktop.kt	2026-10-08 00:29:44.676843593 -0300
++++ b/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/PlatformKeyboardNavigation.desktop.kt	2026-10-08 00:24:33.379973944 -0300
+@@ -34,21 +34,15 @@
+             // Left/Right always belong to the caret while a field is focused,
+             // but Up/Down belong to the caret only in a multiline field; in a
+             // single-line field they move nothing and must still traverse focus.
+-            val key = event.keyCode
+-            when (key) {
+-                KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT ->
+-                    if (DesktopTextInputState.isActive) return@KeyEventDispatcher false
+-                KeyEvent.VK_UP, KeyEvent.VK_DOWN ->
+-                    if (DesktopTextInputState.isMultilineActive) return@KeyEventDispatcher false
+-            }
++            val navKey = event.toNuvioNavKey() ?: return@KeyEventDispatcher false
++            if (!shouldConsumeArrowForFocusNav(
++                    navKey,
++                    DesktopTextInputState.isActive,
++                    DesktopTextInputState.isMultilineActive,
++                )
++            ) return@KeyEventDispatcher false
+ 
+-            val direction = when (key) {
+-                KeyEvent.VK_LEFT -> FocusDirection.Left
+-                KeyEvent.VK_RIGHT -> FocusDirection.Right
+-                KeyEvent.VK_UP -> FocusDirection.Up
+-                KeyEvent.VK_DOWN -> FocusDirection.Down
+-                else -> return@KeyEventDispatcher false
+-            }
++            val direction = navKey.toFocusDirection()
+             var moved = focusManager.moveFocus(direction)
+             if (!moved && PlatformFocusPresence.anchorActive) {
+                 // The anchor's far focusRect makes normal 2D search fail while it
+@@ -57,8 +51,8 @@
+                 focusManager.clearFocus(force = true)
+                 moved = focusManager.moveFocus(direction)
+             }
+-            println(
+-                "nuvio-nav: key=$key moved=$moved text=${DesktopTextInputState.isActive} " +
++            NuvioFocusDiagnostics.log(
++                "nuvio-nav: key=${event.keyCode} moved=$moved text=${DesktopTextInputState.isActive} " +
+                     "ml=${DesktopTextInputState.isMultilineActive} focus=${PlatformFocusPresence.hasFocus} " +
+                     "anchor=${PlatformFocusPresence.anchorActive}",
+             )
+@@ -73,6 +67,21 @@
+     }
+ }
+ 
++private fun KeyEvent.toNuvioNavKey(): NuvioNavKey? = when (keyCode) {
++    KeyEvent.VK_LEFT -> NuvioNavKey.Left
++    KeyEvent.VK_RIGHT -> NuvioNavKey.Right
++    KeyEvent.VK_UP -> NuvioNavKey.Up
++    KeyEvent.VK_DOWN -> NuvioNavKey.Down
++    else -> null
++}
++
++private fun NuvioNavKey.toFocusDirection(): FocusDirection = when (this) {
++    NuvioNavKey.Left -> FocusDirection.Left
++    NuvioNavKey.Right -> FocusDirection.Right
++    NuvioNavKey.Up -> FocusDirection.Up
++    NuvioNavKey.Down -> FocusDirection.Down
++}
++
+ private fun Component?.isArrowKeyConsumer(): Boolean = when (this) {
+     is JTextField -> true
+     is JTextArea -> true

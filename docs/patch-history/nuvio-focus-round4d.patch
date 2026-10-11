@@ -1,0 +1,153 @@
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/home/components/HomeHeroSection.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/home/components/HomeHeroSection.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/home/components/HomeHeroSection.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/home/components/HomeHeroSection.kt	2026-10-07 21:51:43.888769359 -0300
+@@ -65,6 +65,8 @@
+ import com.nuvio.app.core.ui.NuvioAsyncImage as AsyncImage
+ import com.nuvio.app.core.ui.NuvioTokens
+ import com.nuvio.app.core.ui.isFullscreenActionSupported
++import com.nuvio.app.core.ui.nuvioDebugFocusTag
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.core.format.formatReleaseDateForDisplay
+ import com.nuvio.app.core.ui.heroStretchHeight
+ import com.nuvio.app.core.ui.ScreenActivityEffect
+@@ -498,6 +500,7 @@
+                 Spacer(modifier = Modifier.height(14.dp))
+                 Surface(
+                     modifier = Modifier
++                        .nuvioFocusBorder(RoundedCornerShape(40.dp))
+                         .clickable(enabled = onItemClick != null) {
+                             onItemClick?.invoke(currentHeroItem(items, pagerState))
+                         },
+@@ -829,6 +832,7 @@
+                 modifier = Modifier
+                     .fillMaxWidth(layout.logoWidthFraction)
+                     .aspectRatio(2.6f)
++                    .nuvioFocusBorder(RoundedCornerShape(12.dp))
+                     .clickable(enabled = onItemClick != null) {
+                         onItemClick?.invoke(item)
+                     },
+@@ -841,6 +845,7 @@
+                 text = item.name,
+                 modifier = Modifier
+                     .fillMaxWidth()
++                    .nuvioFocusBorder(RoundedCornerShape(12.dp))
+                     .clickable(enabled = onItemClick != null) {
+                         onItemClick?.invoke(item)
+                     },
+@@ -895,6 +900,8 @@
+     Column(
+         modifier = Modifier
+             .fillMaxWidth()
++            .nuvioFocusBorder(RoundedCornerShape(12.dp))
++            .nuvioDebugFocusTag("home-hero")
+             .clickable(
+                 interactionSource = remember { MutableInteractionSource() },
+                 indication = null,
+@@ -980,6 +987,7 @@
+                 Surface(
+                     modifier = Modifier
+                         .height(48.dp)
++                        .nuvioFocusBorder(RoundedCornerShape(40.dp))
+                         .clickable { onItemClick(item) },
+                     color = colorScheme.onBackground,
+                     contentColor = colorScheme.background,
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/library/LibraryScreen.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/library/LibraryScreen.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/library/LibraryScreen.kt	2026-10-07 21:53:23.437411849 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/library/LibraryScreen.kt	2026-10-07 21:52:00.748146231 -0300
+@@ -71,6 +71,8 @@
+ import com.nuvio.app.core.ui.ScopedDisintegrationTracker
+ import com.nuvio.app.core.ui.SkeletonBlock
+ import com.nuvio.app.core.ui.nuvioConsumePointerEvents
++import com.nuvio.app.core.ui.nuvioDebugFocusTag
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.core.ui.nuvioTracksTextInput
+ import com.nuvio.app.core.ui.posterGridColumnCountForViewport
+ import com.nuvio.app.features.home.components.posterGridColumnCountForWidth
+@@ -819,6 +821,8 @@
+     val colorScheme = MaterialTheme.colorScheme
+     Surface(
+         modifier = Modifier
++            .nuvioFocusBorder(RoundedCornerShape(18.dp))
++            .nuvioDebugFocusTag("library-source-chip")
+             .clip(RoundedCornerShape(18.dp))
+             .clickable(onClick = onClick),
+         shape = RoundedCornerShape(18.dp),
+@@ -854,6 +858,7 @@
+         modifier = modifier
+             .fillMaxWidth()
+             .padding(horizontal = 12.dp, vertical = 6.dp)
++            .nuvioFocusBorder(MaterialTheme.shapes.medium)
+             .clickable(enabled = playableCount > 0, onClick = onClick),
+         shape = MaterialTheme.shapes.medium,
+         color = MaterialTheme.colorScheme.surfaceContainerLow,
+@@ -1002,6 +1007,7 @@
+     Surface(
+         modifier = modifier
+             .fillMaxWidth()
++            .nuvioFocusBorder(RoundedCornerShape(8.dp))
+             .clickable(onClick = onClick),
+         shape = RoundedCornerShape(8.dp),
+         color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.58f),
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt	2026-10-07 21:53:23.446807648 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsComponents.kt	2026-10-07 21:52:09.518342271 -0300
+@@ -40,6 +40,7 @@
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.draw.alpha
+ import androidx.compose.ui.focus.FocusRequester
++import androidx.compose.ui.focus.focusProperties
+ import androidx.compose.ui.focus.focusRequester
+ import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.graphics.painter.Painter
+@@ -405,7 +406,16 @@
+             checked = checked,
+             onCheckedChange = onCheckedChange,
+             enabled = enabled,
+-            modifier = Modifier.padding(start = 4.dp),
++            // Material3's Switch applies its own `toggleable`, which registers
++            // a separate focus target. D-pad focus therefore landed on the
++            // Switch instead of the row's clickable, and the row's focus ring
++            // went missing. Suppress the Switch's focus target so the row is a
++            // single focus stop; touch and the row's A/Enter clickable still
++            // toggle it, and a disabled row stays non-focusable (both the
++            // disabled clickable and this Switch opt out).
++            modifier = Modifier
++                .padding(start = 4.dp)
++                .focusProperties { canFocus = false },
+             colors = SwitchDefaults.colors(
+                 checkedThumbColor = tokens.colors.onAccent,
+                 checkedTrackColor = tokens.colors.accent,
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt	2026-10-07 21:53:23.446949429 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt	2026-10-07 21:46:59.954418263 -0300
+@@ -1008,11 +1008,12 @@
+             repeat(SettingsContentFocusRetryFrames) {
+                 withFrameNanos { }
+                 if (backRequester.requestFocus()) {
++                    // cwrneirOS round 4d: move on to the first content entry in the
++                    // same frame so the back-button ring never paints; the back
++                    // button stays reachable via Up.
++                    focusManager.moveFocus(FocusDirection.Down)
+                     withFrameNanos { }
+                     if (PlatformFocusPresence.hasFocus && !PlatformFocusPresence.anchorActive) {
+-                        // cwrneirOS round 4c: land on the first content entry — the
+-                        // header back button stays one Up away (retest-4/5 feedback).
+-                        focusManager.moveFocus(FocusDirection.Down)
+                         return@LaunchedEffect
+                     }
+                 }
+@@ -1231,7 +1232,13 @@
+                                 if (settingsSearchQuery.isBlank()) {
+                                     settingsRootContent(
+                                         isTablet = true,
+-                                        firstRowModifier = Modifier.focusRequester(contentEntryRequester),
++                                        firstRowModifier = Modifier
++                                            .focusRequester(contentEntryRequester)
++                                            // cwrneirOS round 4d: Root has no header back
++                                            // button, so Up from the first content entry
++                                            // must not leak into the categories (the
++                                            // header has no focus target there).
++                                            .focusProperties { up = FocusRequester.Cancel },
+                                         onPlaybackClick = { openInlinePage(SettingsPage.Playback) },
+                                         onAppearanceClick = { openInlinePage(SettingsPage.Appearance) },
+                                         onAdvancedClick = { openInlinePage(SettingsPage.Advanced) },

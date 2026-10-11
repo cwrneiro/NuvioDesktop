@@ -1,0 +1,303 @@
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/FullscreenAction.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/FullscreenAction.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/FullscreenAction.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/core/ui/FullscreenAction.kt	2026-10-08 18:04:52.234952319 -0300
+@@ -60,6 +60,8 @@
+     Box(
+         modifier = modifier
+             .size(buttonSize)
++            // cwrneirOS: ring before the shape clip and the clickable focus target.
++            .nuvioFocusBorder(CircleShape)
+             .clip(CircleShape)
+             .background(containerColor)
+             .clickable(
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/home/components/HomeHeroSection.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/home/components/HomeHeroSection.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/home/components/HomeHeroSection.kt	2026-10-08 00:29:44.689802831 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/home/components/HomeHeroSection.kt	2026-10-08 18:04:45.979815437 -0300
+@@ -44,6 +44,7 @@
+ import androidx.compose.ui.BiasAlignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.draw.clip
++import androidx.compose.ui.focus.focusProperties
+ import androidx.compose.ui.graphics.Brush
+ import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.graphics.graphicsLayer
+@@ -689,6 +690,10 @@
+             val activeFraction = heroPageVisibility(pagerState, page)
+             Box(
+                 modifier = Modifier
++                    // cwrneirOS: page-indicator dots are decorative pointer-only
++                    // affordances; opt out of couch/D-pad focus so they are not
++                    // ringless dead-end focus stops.
++                    .focusProperties { canFocus = false }
+                     .clickable {
+                         coroutineScope.launch {
+                             pagerState.animateScrollToPage(heroPageForItem(pagerState.currentPage, index, itemCount))
+@@ -750,6 +755,8 @@
+ ) {
+     Box(
+         modifier = Modifier
++            // cwrneirOS: decorative pointer-only dot; keep it out of the focus order.
++            .focusProperties { canFocus = false }
+             .clickable(onClick = onClick)
+             .clip(CircleShape)
+             .background(MaterialTheme.colorScheme.onBackground)
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/library/LibraryScreen.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/library/LibraryScreen.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/library/LibraryScreen.kt	2026-10-08 00:29:44.690078467 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/library/LibraryScreen.kt	2026-10-08 18:05:05.638245707 -0300
+@@ -320,6 +320,7 @@
+                                         onClick = {
+                                             LibraryDisplaySettingsRepository.setLayoutMode(targetLayout)
+                                         },
++                                        modifier = Modifier.nuvioFocusBorder(RoundedCornerShape(50)),
+                                     ) {
+                                         Crossfade(
+                                             targetState = targetLayout,
+@@ -674,7 +675,10 @@
+         },
+         trailingIcon = {
+             if (query.isNotEmpty()) {
+-                IconButton(onClick = { onQueryChange("") }) {
++                IconButton(
++                    onClick = { onQueryChange("") },
++                    modifier = Modifier.nuvioFocusBorder(RoundedCornerShape(50)),
++                ) {
+                     Icon(
+                         imageVector = Icons.Rounded.Close,
+                         contentDescription = stringResource(Res.string.compose_search_clear),
+@@ -799,7 +803,10 @@
+                     },
+                 )
+             }
+-            IconButton(onClick = onRefresh) {
++            IconButton(
++                onClick = onRefresh,
++                modifier = Modifier.nuvioFocusBorder(RoundedCornerShape(50)),
++            ) {
+                 Icon(
+                     imageVector = Icons.Rounded.Refresh,
+                     contentDescription = stringResource(Res.string.cloud_library_refresh),
+@@ -902,7 +909,10 @@
+                     )
+                 }
+                 if (playableCount > 0) {
+-                    IconButton(onClick = onClick) {
++                    IconButton(
++                        onClick = onClick,
++                        modifier = Modifier.nuvioFocusBorder(RoundedCornerShape(50)),
++                    ) {
+                         Icon(
+                             imageVector = Icons.Rounded.PlayArrow,
+                             contentDescription = stringResource(Res.string.action_play),
+@@ -947,7 +957,10 @@
+                 verticalAlignment = Alignment.CenterVertically,
+                 horizontalArrangement = Arrangement.spacedBy(8.dp),
+             ) {
+-                IconButton(onClick = onBack) {
++                IconButton(
++                    onClick = onBack,
++                    modifier = Modifier.nuvioFocusBorder(RoundedCornerShape(50)),
++                ) {
+                     Icon(
+                         imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                         contentDescription = stringResource(Res.string.action_back),
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/search/SearchScreen.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/search/SearchScreen.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/search/SearchScreen.kt	2026-10-06 16:20:45.000000000 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/search/SearchScreen.kt	2026-10-08 18:05:11.782380237 -0300
+@@ -49,6 +49,7 @@
+ import com.nuvio.app.core.ui.NuvioNetworkOfflineCard
+ import com.nuvio.app.core.ui.NuvioScreenHeader
+ import com.nuvio.app.core.ui.nuvioConsumePointerEvents
++import com.nuvio.app.core.ui.nuvioFocusBorder
+ import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
+ import com.nuvio.app.core.ui.withDuplicateSafeLazyKeys
+ import com.nuvio.app.core.ui.ScreenActivityEffect
+@@ -292,11 +293,18 @@
+                                 .focusRequester(focusRequester)
+                                 .onFocusChanged {
+                                     isSearchFocused = it.isFocused
+-                                    if (query.isNotBlank()) focusRequester.captureFocus()
++                                    // cwrneirOS: only capture on gain. Re-capturing on
++                                    // focus loss (the previous unconditional capture
++                                    // when query was non-blank) stole focus back and
++                                    // trapped arrows inside the field.
++                                    if (it.isFocused && query.isNotBlank()) focusRequester.captureFocus()
+                                 },
+                             trailingContent = if (query.isNotBlank()) {
+                                 {
+-                                    IconButton(onClick = { query = "" }) {
++                                    IconButton(
++                                        onClick = { query = "" },
++                                        modifier = Modifier.nuvioFocusBorder(RoundedCornerShape(50)),
++                                    ) {
+                                         Icon(
+                                             imageVector = Icons.Rounded.Close,
+                                             contentDescription = stringResource(Res.string.compose_search_clear),
+diff -ruN a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt
+--- a/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt	2026-10-08 13:02:02.877827157 -0300
++++ b/composeApp/src/commonMain/kotlin/com/nuvio/app/features/settings/SettingsScreen.kt	2026-10-08 18:04:29.225448927 -0300
+@@ -982,11 +982,12 @@
+             if (SettingsFocusLinks.contentEntry === contentGroupRequester) SettingsFocusLinks.contentEntry = null
+         }
+     }
+-    // cwrneirOS consolidation fix (2026-10-08): on Root, target the always-composed
+-    // content-group Box. Its first row (contentEntryRequester) is uncomposed once the
+-    // pane is scrolled, so Right from a category used to no-op; the group redirects
+-    // into a placed child. Subpages keep the concrete header back button target.
+-    SettingsFocusLinks.contentEntry = if (page == SettingsPage.Root) contentGroupRequester else backRequester
++    // cwrneirOS consolidation fix (2026-10-08): target the always-composed
++    // content-group Box on BOTH Root and subpages. Its first row
++    // (contentEntryRequester) / header back button are uncomposed once the pane is
++    // scrolled, so Right from a category (or on subpage re-entry) used to no-op or
++    // land on the wrong node; the group redirects into a placed (visible) child.
++    SettingsFocusLinks.contentEntry = contentGroupRequester
+ 
+     LaunchedEffect(page) {
+         if (page.opensInlineOnTablet) {
+@@ -1017,6 +1018,14 @@
+                     withFrameNanos { }
+                     if (PlatformFocusPresence.hasFocus && !PlatformFocusPresence.anchorActive) {
+                         return@LaunchedEffect
++                    }
++                } else if (contentGroupRequester.requestFocus()) {
++                    // cwrneirOS: scrolled subpage — the header back button is
++                    // uncomposed, so fall back to the always-composed content
++                    // group, which redirects into a placed (visible) row.
++                    withFrameNanos { }
++                    if (PlatformFocusPresence.hasFocus && !PlatformFocusPresence.anchorActive) {
++                        return@LaunchedEffect
+                     }
+                 }
+             }
+diff -ruN a/composeApp/src/desktopTest/kotlin/com/nuvio/app/focuscontract/FocusContractTest.kt b/composeApp/src/desktopTest/kotlin/com/nuvio/app/focuscontract/FocusContractTest.kt
+--- a/composeApp/src/desktopTest/kotlin/com/nuvio/app/focuscontract/FocusContractTest.kt	1969-12-31 21:00:00.000000000 -0300
++++ b/composeApp/src/desktopTest/kotlin/com/nuvio/app/focuscontract/FocusContractTest.kt	2026-10-08 18:09:54.545593032 -0300
+@@ -0,0 +1,129 @@
++package com.nuvio.app.focuscontract
++
++import androidx.compose.foundation.clickable
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.height
++import androidx.compose.foundation.lazy.LazyColumn
++import androidx.compose.foundation.lazy.items
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.focus.FocusDirection
++import androidx.compose.ui.focus.FocusManager
++import androidx.compose.ui.platform.LocalFocusManager
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.test.SemanticsMatcher
++import androidx.compose.ui.test.assert
++import androidx.compose.ui.test.assertIsFocused
++import androidx.compose.ui.test.hasClickAction
++import androidx.compose.ui.test.isFocused
++import androidx.compose.ui.test.junit4.createComposeRule
++import androidx.compose.ui.test.onNodeWithTag
++import androidx.compose.ui.unit.dp
++import com.nuvio.app.AppScreenTab
++import com.nuvio.app.DesktopHoverSidebar
++import com.nuvio.app.RootTabHost
++import com.nuvio.app.core.ui.FocusRingSemantics
++import com.nuvio.app.core.ui.NuvioTheme
++import com.nuvio.app.core.ui.SettingsFocusLinks
++import com.nuvio.app.core.ui.nuvioFocusBorder
++import org.junit.Before
++import org.junit.Rule
++import kotlin.test.Test
++
++/**
++ * cwrneirOS headless focus-contract tests.
++ *
++ * These encode the couch acceptance rules as deterministic Compose assertions so
++ * focus regressions are caught without a hardware pass. Arrow navigation is an
++ * AWT KeyEventDispatcher on desktop, which is absent headlessly; focus is driven
++ * with LocalFocusManager.moveFocus, exactly the path the dispatcher invokes.
++ *
++ * Invariant under test: after a directional move, focus must land on a node that
++ * is BOTH ringed ([FocusRingSemantics]) AND actionable. A focus landing that is
++ * ringless or has no click/text action is a dead-end (the retest-7 blocker:
++ * RootTabPane's `canFocus = active` promoted the LazyColumn scroll anchor — an
++ * invisible, non-actionable focus target — into a 2D candidate).
++ */
++class FocusContractTest {
++
++    @get:Rule
++    val compose = createComposeRule()
++
++    private val ringed: SemanticsMatcher = SemanticsMatcher.keyIsDefined(FocusRingSemantics)
++
++    @Before
++    fun resetGlobalFocusState() {
++        SettingsFocusLinks.railEntries.clear()
++        SettingsFocusLinks.categoryEntry = null
++        SettingsFocusLinks.contentEntry = null
++    }
++
++    @Test
++    fun rightFromRailLandsOnRingedActionableContentNotThePaneAnchor() {
++        lateinit var focusManager: FocusManager
++
++        compose.setContent {
++            NuvioTheme {
++                focusManager = LocalFocusManager.current
++                Row(Modifier.fillMaxSize()) {
++                    DesktopHoverSidebar(
++                        selectedTab = AppScreenTab.Home,
++                        onTabSelected = {},
++                        onProfileSelected = {},
++                        onAddProfileRequested = {},
++                        sidebarWidth = 68.dp,
++                    )
++                    RootTabHost(
++                        selectedTab = AppScreenTab.Home,
++                        modifier = Modifier.fillMaxSize(),
++                        active = true,
++                        profileId = 1,
++                    ) { _ ->
++                        // A LazyColumn reproduces the real content root: Foundation
++                        // attaches a Focusability.Never scroll anchor to it.
++                        LazyColumn(Modifier.fillMaxSize()) {
++                            items(20) { index ->
++                                androidx.compose.foundation.layout.Box(
++                                    Modifier
++                                        .fillMaxWidth()
++                                        .height(56.dp)
++                                        .nuvioFocusBorder(RoundedCornerShape(12.dp))
++                                        .clickable {}
++                                        .testTag("content-row-$index"),
++                                )
++                            }
++                        }
++                    }
++                }
++            }
++        }
++
++        compose.waitForIdle()
++        val homeRequester = SettingsFocusLinks.railEntries[AppScreenTab.Home]
++        requireNotNull(homeRequester) { "rail home requester was not registered" }
++        compose.runOnIdle { homeRequester.requestFocus() }
++        compose.waitForIdle()
++
++        compose.runOnIdle { focusManager.moveFocus(FocusDirection.Right) }
++        compose.waitForIdle()
++
++        // Focus must be on a ringed, actionable node: never the ringless,
++        // non-actionable LazyColumn scroll anchor.
++        compose.onNode(isFocused() and ringed and hasClickAction()).assertExists()
++
++        // And it must be one of the real content rows, not some wrapper.
++        val focusedRow = (0 until 20).firstOrNull { index ->
++            runCatching {
++                compose.onNodeWithTag("content-row-$index").assertIsFocused()
++            }.isSuccess
++        }
++        require(focusedRow != null) { "focus did not land on a content row after Right" }
++
++        // Sanity: the landed row is ringed.
++        compose.onNodeWithTag("content-row-$focusedRow")
++            .assert(ringed)
++            .assert(hasClickAction())
++    }
++}

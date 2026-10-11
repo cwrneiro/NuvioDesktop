@@ -2,29 +2,39 @@
 
 Fork of [NuvioMedia/NuvioDesktop](https://github.com/NuvioMedia/NuvioDesktop)
 carrying the **controller / focus-navigation** work for the
-[cwrneirOS](../../) TV-shell appliance, plus the Nix packaging that builds it.
+[cwrneirOS](../../) TV-shell appliance. It is used in two ways:
 
-This repo is the **single home for all Nuvio-side context**: the app-side
-focus/arrow-navigation implementation, its packaging, the focus-contract test
-tooling, the design plans, and the field findings. The OS-side integration
-(session, input bridge, shell, app-launcher/exit-to-home contract) lives in
-cwrneirOS and consumes this repo as a pinned flake input.
+- **`cwrn/packaging`** — the cwrneirOS integration branch (app changes + Nix
+  packaging + cwrneirOS-side docs), consumed by cwrneirOS as a pinned flake
+  input.
+- **`pr/focus-nav`** — a clean, app-only branch intended to open the upstream
+  PR from. It contains **no** packaging, cwrneirOS docs, or cwrneirOS-specific
+  tweaks — only generalizable Compose focus/navigation changes.
+
+The app-side focus/arrow-navigation implementation, its packaging, the
+focus-contract tooling, the design plans and the field findings all live here.
+The OS-side integration (session, input bridge, shell, app-launcher/exit-to-home
+contract) lives in cwrneirOS.
 
 ## Branch model
 
-- `cwrn-focus-nav` — the branch this work ships from. Base:
-  upstream `Dev` @ **`d4bdf258`** (post-`0.1.27-alpha`; includes the merged
-  upstream PR #791 desktop back handling). On top: the cwrneirOS focus work as
-  **17 commits** (see below).
-- `Dev`, tags — upstream, untouched. `upstream` remote points at
-  `NuvioMedia/NuvioDesktop`; `origin` is this fork.
+- `Dev`, tags — upstream, untouched (the fork's default branch). `upstream`
+  remote points at `NuvioMedia/NuvioDesktop`; `origin` is this fork.
+- `cwrn/packaging` — cwrneirOS integration. Base: upstream `Dev` @
+  **`d4bdf258`** (post-`0.1.27-alpha`; includes the merged upstream PR #791
+  desktop back handling). On top: the focus work as **17 commits** (see below),
+  plus the Nix packaging (`nix/`, `flake.nix`) and the cwrneirOS-side docs
+  (`docs/adr-nuvio.md`, `docs/state-nuvio.md`, `docs/plans/`,
+  `docs/patch-history/`). cwrneirOS pins this branch's commit as `inputs.nuvio`.
+- `pr/focus-nav` — clean upstream-PR branch off `Dev`: the same focus work
+  consolidated into a few upstream-oriented commits, app-only.
 
-## What this fork adds
+## What the packaging branch adds
 
 The upstream desktop build has no in-app controller navigation: D-pad/arrow
-keys do nothing. This branch adds arrow-key focus navigation (upstream PR
-#180, rebased), then iterates on the focus graph and focus-ring visibility
-across the couch-reachable surfaces. The 17 commits, in order:
+keys do nothing. The work adds arrow-key focus navigation (upstream PR #180,
+rebased), then iterates on the focus graph and focus-ring visibility across the
+desktop surfaces. The packaging branch carries 17 commits, in order:
 
 | # | commit subject | source patch (archived) |
 |---|---|---|

@@ -2,6 +2,8 @@ package com.nuvio.app.core.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.awt.LocalAwtWindow
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
 import com.nuvio.app.core.ui.PlatformFocusPresence
@@ -17,14 +19,28 @@ import javax.swing.JSpinner
 import javax.swing.JTextArea
 import javax.swing.JTextField
 import javax.swing.Scrollable
+import javax.swing.SwingUtilities
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 actual fun PlatformKeyboardNavigation() {
     val focusManager = LocalFocusManager.current
+    val window = LocalAwtWindow.current
 
     DisposableEffect(Unit) {
         val dispatcher = KeyEventDispatcher { event: KeyEvent ->
             if (event.id != KeyEvent.KEY_PRESSED) return@KeyEventDispatcher false
+            // Dialogs/menus/dropdown popups are separate ComposeWindows: when one
+            // of them owns focus it must receive its own keys, so only handle
+            // events that belong to the main window. A null window is a defensive
+            // fallback (app entry always provides one) keeping the previous
+            // unscoped behavior.
+            if (window != null) {
+                val component = event.component
+                if (component == null || SwingUtilities.getWindowAncestor(component) !== window) {
+                    return@KeyEventDispatcher false
+                }
+            }
             if (KeyboardFocusManager.getCurrentKeyboardFocusManager()
                     .focusOwner.isArrowKeyConsumer()
             ) return@KeyEventDispatcher false
@@ -34,28 +50,35 @@ actual fun PlatformKeyboardNavigation() {
             // Left/Right always belong to the caret while a field is focused,
             // but Up/Down belong to the caret only in a multiline field; in a
             // single-line field they move nothing and must still traverse focus.
+            // Compose sliders are equally invisible to isArrowKeyConsumer();
+            // while one is focused, Left/Right adjust its value instead.
             val navKey = event.toNuvioNavKey() ?: return@KeyEventDispatcher false
             if (!shouldConsumeArrowForFocusNav(
                     navKey,
                     DesktopTextInputState.isActive,
                     DesktopTextInputState.isMultilineActive,
+                    DesktopSliderState.isActive,
                 )
             ) return@KeyEventDispatcher false
 
             val direction = navKey.toFocusDirection()
             var moved = focusManager.moveFocus(direction)
             if (!moved && PlatformFocusPresence.anchorActive) {
-                // The anchor's far focusRect makes normal 2D search fail while it
-                // is focused; clearing focus restores the usual root-anchored
-                // search for one retry.
+                // The anchor's focusRect is all-NaN (see MainAppContent's
+                // recovery anchor), so 2D search rejects it as a candidate in
+                // every direction while it is focused; clearing focus restores
+                // the usual root-anchored search for one retry.
                 focusManager.clearFocus(force = true)
                 moved = focusManager.moveFocus(direction)
             }
             NuvioFocusDiagnostics.log(
                 "nuvio-nav: key=${event.keyCode} moved=$moved text=${DesktopTextInputState.isActive} " +
-                    "ml=${DesktopTextInputState.isMultilineActive} focus=${PlatformFocusPresence.hasFocus} " +
-                    "anchor=${PlatformFocusPresence.anchorActive}",
+                    "ml=${DesktopTextInputState.isMultilineActive} slider=${DesktopSliderState.isActive} " +
+                    "focus=${PlatformFocusPresence.hasFocus} anchor=${PlatformFocusPresence.anchorActive}",
             )
+            // Consume the arrow even when the move failed (moved=false):
+            // returning the event untranslated risks double-handling, and
+            // swallowing failed moves is the current tested behavior.
             true
         }
         KeyboardFocusManager.getCurrentKeyboardFocusManager()

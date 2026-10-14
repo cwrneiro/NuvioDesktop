@@ -71,6 +71,7 @@ import com.nuvio.app.core.ui.PosterCardStyleRepository
 import com.nuvio.app.core.ui.PosterCardStyleUiState
 import com.nuvio.app.core.ui.cardDepthVisual
 import com.nuvio.app.core.ui.nuvioFocusBorder
+import com.nuvio.app.core.ui.nuvioTracksSlider
 import com.nuvio.app.core.ui.nuvioTracksTextInput
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.action_reset
@@ -513,7 +514,7 @@ private fun CardDepthFineTuneSheet(
                     thumbColor = MaterialTheme.colorScheme.primary,
                     activeTrackColor = MaterialTheme.colorScheme.primary,
                 ),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().nuvioTracksSlider(),
             )
         }
     }

@@ -35,6 +35,7 @@ import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.formatHexColor
 import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.core.ui.nuvioFocusBorder
+import com.nuvio.app.core.ui.nuvioTracksSlider
 import kotlin.math.roundToInt
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.custom_theme_brightness
@@ -135,7 +136,7 @@ private fun ColorChannelSlider(
             value = value,
             onValueChange = onValueChange,
             valueRange = valueRange,
-            modifier = Modifier.fillMaxWidth().semantics { contentDescription = title },
+            modifier = Modifier.fillMaxWidth().semantics { contentDescription = title }.nuvioTracksSlider(),
             track = {
                 Box(
                     Modifier.fillMaxWidth().height(NuvioTokens.Space.s8)

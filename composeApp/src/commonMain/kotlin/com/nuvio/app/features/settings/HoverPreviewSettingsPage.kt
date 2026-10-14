@@ -30,6 +30,7 @@ import com.nuvio.app.core.ui.MinHoverPreviewOpenDelayMillis
 import com.nuvio.app.core.ui.MinHoverPreviewTrailerStartSeconds
 import com.nuvio.app.core.ui.PosterCardStyleRepository
 import com.nuvio.app.core.ui.PosterCardStyleUiState
+import com.nuvio.app.core.ui.nuvioTracksSlider
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.settings_hover_preview_delay
 import nuvio.composeapp.generated.resources.settings_hover_preview_delay_description
@@ -180,7 +181,7 @@ private fun HoverPreviewDelaySlider(
                 thumbColor = MaterialTheme.colorScheme.primary,
                 activeTrackColor = MaterialTheme.colorScheme.primary,
             ),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().nuvioTracksSlider(),
         )
     }
 }
@@ -248,7 +249,7 @@ private fun HoverPreviewTrailerStartSlider(
                 thumbColor = MaterialTheme.colorScheme.primary,
                 activeTrackColor = MaterialTheme.colorScheme.primary,
             ),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().nuvioTracksSlider(),
         )
     }
 }

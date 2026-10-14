@@ -369,6 +369,9 @@ private fun MetaSectionRow(
             Switch(
                 checked = item.enabled,
                 onCheckedChange = onEnabledChange,
+                // Bare Switch: mirror PosterToggleRow and ring the Switch itself
+                // so the keyboard focus stop is indicated.
+                modifier = Modifier.nuvioFocusBorder(RoundedCornerShape(8.dp)),
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                     checkedTrackColor = MaterialTheme.colorScheme.primary,

@@ -2,6 +2,7 @@ package com.nuvio.app.features.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +39,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.CustomThemeColors
 import com.nuvio.app.core.ui.NuvioInputField
 import com.nuvio.app.core.ui.NuvioModalBottomSheet
@@ -128,7 +130,9 @@ internal fun CustomThemeEditor(
                                         if (gradient) Res.string.custom_theme_mode_gradient else Res.string.custom_theme_mode_solid,
                                     ))
                                 },
-                                modifier = Modifier.semantics { role = Role.RadioButton },
+                                modifier = Modifier
+                                    .nuvioFocusBorder(RoundedCornerShape(8.dp))
+                                    .semantics { role = Role.RadioButton },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                     selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,

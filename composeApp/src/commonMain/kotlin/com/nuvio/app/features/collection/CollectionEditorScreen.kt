@@ -298,6 +298,10 @@ fun CollectionEditorScreen(
                         Switch(
                             checked = state.pinToTop,
                             onCheckedChange = { CollectionEditorRepository.setPinToTop(it) },
+                            // Single focus stop per row (SettingsSwitchRow pattern): the
+                            // ringed row's clickable toggles; suppress the Switch's own
+                            // toggleable focus target so D-pad arrows don't stop twice.
+                            modifier = Modifier.focusProperties { canFocus = false },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                                 checkedTrackColor = MaterialTheme.colorScheme.primary,
@@ -331,6 +335,9 @@ fun CollectionEditorScreen(
                             FilterChip(
                                 selected = state.viewMode == mode,
                                 onClick = { CollectionEditorRepository.setViewMode(mode) },
+                                // Mirror PosterCustomizationSettingsPage FilterChip:
+                                // ring the chip so its focus stop is indicated.
+                                modifier = Modifier.nuvioFocusBorder(RoundedCornerShape(8.dp)),
                                 label = {
                                     Text(
                                         when (mode) {
@@ -382,6 +389,10 @@ fun CollectionEditorScreen(
                         Switch(
                             checked = state.showAllTab,
                             onCheckedChange = { CollectionEditorRepository.setShowAllTab(it) },
+                            // Single focus stop per row (SettingsSwitchRow pattern): the
+                            // ringed row's clickable toggles; suppress the Switch's own
+                            // toggleable focus target so D-pad arrows don't stop twice.
+                            modifier = Modifier.focusProperties { canFocus = false },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                                 checkedTrackColor = MaterialTheme.colorScheme.primary,
@@ -765,6 +776,9 @@ private fun FolderEditorPage(
                                         FilterChip(
                                             selected = folder.posterShape == shape,
                                             onClick = { CollectionEditorRepository.updateFolderTileShape(shape) },
+                                            // Mirror PosterCustomizationSettingsPage FilterChip:
+                                            // ring the chip so its focus stop is indicated.
+                                            modifier = Modifier.nuvioFocusBorder(RoundedCornerShape(8.dp)),
                                             label = { Text(posterShapeLabel(shape)) },
                                             leadingIcon = if (folder.posterShape == shape) {
                                                 {

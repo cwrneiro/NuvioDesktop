@@ -15,9 +15,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.details_show_less
 import nuvio.composeapp.generated.resources.details_show_more
@@ -38,6 +40,7 @@ internal fun ExpandableDescription(
         modifier = modifier
             .fillMaxWidth()
             .animateContentSize()
+            .nuvioFocusBorder(RectangleShape)
             .clickable(enabled = canExpand) { expanded = !expanded },
     ) {
         Text(

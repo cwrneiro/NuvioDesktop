@@ -53,6 +53,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
@@ -66,6 +67,7 @@ import com.nuvio.app.core.ui.NuvioScreen
 import com.nuvio.app.core.ui.NuvioScreenHeader
 import com.nuvio.app.core.ui.NuvioSectionLabel
 import com.nuvio.app.core.ui.NuvioSurfaceCard
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.nuvioSafeBottomPadding
 import com.nuvio.app.core.ui.PlatformBackHandler
 import com.nuvio.app.features.home.PosterShape
@@ -275,6 +277,7 @@ fun CollectionEditorScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .nuvioFocusBorder(RoundedCornerShape(12.dp))
                             .clickable { CollectionEditorRepository.setPinToTop(!state.pinToTop) },
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
@@ -358,6 +361,7 @@ fun CollectionEditorScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .nuvioFocusBorder(RoundedCornerShape(12.dp))
                             .clickable { CollectionEditorRepository.setShowAllTab(!state.showAllTab) },
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
@@ -1880,6 +1884,7 @@ private fun PickerOptionRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .nuvioFocusBorder(rowShape)
             .clip(rowShape)
             .background(bgColor)
             .clickable(onClick = onClick)
@@ -2151,6 +2156,7 @@ private fun FolderEditorToggleRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .nuvioFocusBorder(RoundedCornerShape(12.dp))
             .clickable { onCheckedChange(!checked) },
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -2176,6 +2182,10 @@ private fun FolderEditorToggleRow(
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
+            // Single focus stop per row (SettingsSwitchRow pattern): the row's
+            // clickable handles the toggle; suppress the Switch's own
+            // toggleable focus target so D-pad arrows don't stop twice.
+            modifier = Modifier.focusProperties { canFocus = false },
             colors = SwitchDefaults.colors(
                 checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                 checkedTrackColor = MaterialTheme.colorScheme.primary,
@@ -2353,6 +2363,7 @@ private fun FolderCatalogSourceCard(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .nuvioFocusBorder(RoundedCornerShape(12.dp))
                         .clickable(onClick = onOpenGenrePicker),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
@@ -2373,7 +2384,14 @@ private fun FolderCatalogSourceCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    TextButton(onClick = onOpenGenrePicker) {
+                    // Single focus stop per row (SettingsSwitchRow pattern): the
+                    // row and this button perform the identical action, so the
+                    // row's clickable owns keyboard activation; the button stays
+                    // pointer-clickable but drops out of the D-pad focus order.
+                    TextButton(
+                        onClick = onOpenGenrePicker,
+                        modifier = Modifier.focusProperties { canFocus = false },
+                    ) {
                         Text(stringResource(Res.string.collections_editor_choose_genre))
                     }
                 }
@@ -2584,6 +2602,7 @@ private fun GenrePickerOptionRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .nuvioFocusBorder(RoundedCornerShape(10.dp))
             .clip(RoundedCornerShape(10.dp))
             .background(bgColor)
             .border(1.dp, borderColor, RoundedCornerShape(10.dp))

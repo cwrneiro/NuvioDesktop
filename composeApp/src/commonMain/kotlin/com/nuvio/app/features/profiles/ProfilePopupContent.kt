@@ -57,6 +57,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
@@ -214,6 +215,7 @@ private fun ProfilePopupItem(
     val scale by animateFloatAsState(if (isHovered) 1.04f else 1f, tween(90), label = "profile_hover")
     Column(
         modifier.graphicsLayer { scaleX = scale; scaleY = scale }
+            .nuvioFocusBorder(tokens.shapes.compactCard)
             .clip(tokens.shapes.compactCard)
             .background(if (isHovered) tokens.colors.accent.copy(alpha = 0.14f) else Color.Transparent)
             .selectable(selected = isActive, onClick = onClick)

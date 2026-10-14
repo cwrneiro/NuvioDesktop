@@ -49,6 +49,7 @@ import com.nuvio.app.core.ui.NuvioScreen
 import com.nuvio.app.core.ui.NuvioScreenHeader
 import com.nuvio.app.core.ui.NuvioStatusModal
 import com.nuvio.app.core.ui.NuvioSurfaceCard
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.themePalette
 import com.nuvio.app.features.membership.CosmeticEntitlement
 import com.nuvio.app.features.membership.MemberAccessRepository
@@ -549,6 +550,9 @@ private fun ProfileOptionRow(
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
+            // Bare Switch (row is not clickable): mirror PosterToggleRow and
+            // ring the Switch itself so the keyboard focus stop is indicated.
+            modifier = Modifier.nuvioFocusBorder(RoundedCornerShape(8.dp)),
             colors = SwitchDefaults.colors(
                 checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                 checkedTrackColor = MaterialTheme.colorScheme.primary,

@@ -55,6 +55,7 @@ import com.nuvio.app.core.ui.NuvioScreenHeader
 import com.nuvio.app.core.ui.NuvioSectionLabel
 import com.nuvio.app.core.ui.NuvioStatusModal
 import com.nuvio.app.core.ui.NuvioSurfaceCard
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -451,6 +452,9 @@ private fun InstalledAddonCard(
             Switch(
                 checked = addon.enabled,
                 onCheckedChange = onEnabledChange,
+                // Bare Switch (row is not clickable): mirror PosterToggleRow and
+                // ring the Switch itself so the keyboard focus stop is indicated.
+                modifier = Modifier.nuvioFocusBorder(RoundedCornerShape(8.dp)),
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                     checkedTrackColor = MaterialTheme.colorScheme.primary,

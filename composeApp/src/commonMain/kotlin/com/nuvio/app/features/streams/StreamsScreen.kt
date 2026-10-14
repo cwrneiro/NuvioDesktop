@@ -48,11 +48,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -84,6 +87,7 @@ import com.nuvio.app.core.ui.NuvioDesktopVerticalScrollbar
 import com.nuvio.app.core.ui.NuvioModalBottomSheet
 import com.nuvio.app.core.ui.NuvioToastController
 import com.nuvio.app.core.ui.dismissNuvioBottomSheet
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.withDuplicateSafeLazyKeys
 import com.nuvio.app.features.downloads.DownloadsRepository
 import com.nuvio.app.features.details.MetaScreenSettingsRepository
@@ -1215,6 +1219,19 @@ private fun DesktopStreamActionsMenu(
         }
     }
 
+    // P5: the popup is focusable and takes window focus when shown — land that
+    // focus on the first (ringed) action row so arrows/Enter work immediately.
+    val firstActionFocus = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        repeat(8) {
+            withFrameNanos { }
+            if (runCatching { firstActionFocus.requestFocus() }.getOrDefault(false)) {
+                return@LaunchedEffect
+            }
+        }
+    }
+
     Popup(
         popupPositionProvider = remember(anchorInRoot, edgeMarginPx) {
             StreamActionsPopupPositionProvider(
@@ -1241,13 +1258,14 @@ private fun DesktopStreamActionsMenu(
                 )
                 .padding(4.dp),
         ) {
-            actions.forEach { action ->
+            actions.forEachIndexed { index, action ->
                 DesktopStreamActionRow(
                     action = action,
                     onSelected = {
                         onDismiss()
                         action.onClick()
                     },
+                    modifier = if (index == 0) Modifier.focusRequester(firstActionFocus) else Modifier,
                 )
             }
         }
@@ -1258,15 +1276,17 @@ private fun DesktopStreamActionsMenu(
 private fun DesktopStreamActionRow(
     action: DesktopStreamAction,
     onSelected: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
     val rowShape = RoundedCornerShape(5.dp)
 
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(38.dp)
+            .nuvioFocusBorder(rowShape)
             .clip(rowShape)
             .background(
                 if (isHovered) {

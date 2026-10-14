@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
@@ -37,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.NuvioActionLabel
 import com.nuvio.app.core.ui.NuvioLoadingIndicator
 import com.nuvio.app.core.ui.NuvioToastController
+import com.nuvio.app.core.ui.NuvioTokens
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.home.HomeCatalogSettingsItem
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
@@ -210,8 +213,15 @@ private fun HeroSourcesDropdown(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp)
-                .clickable { onExpandedChange(!expanded) },
+                // Mirror SettingsNavigationRow/HomescreenCatalogRow: inset the
+                // focusable box 4dp before nuvioFocusBorder (the ring draws up
+                // to 4dp outside the node) so the enclosing SettingsGroup card
+                // clip cannot shave the left/right ring strokes; content
+                // padding drops by the same 4dp so nothing shifts.
+                .padding(horizontal = NuvioTokens.Space.s4)
+                .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4))
+                .clickable { onExpandedChange(!expanded) }
+                .padding(horizontal = 16.dp - NuvioTokens.Space.s4, vertical = 14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Column(

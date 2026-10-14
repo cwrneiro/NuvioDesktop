@@ -43,6 +43,7 @@ import com.nuvio.app.core.ui.MenuItem
 import com.nuvio.app.core.ui.NuvioCardDepthSurface
 import com.nuvio.app.core.ui.nuvioCardDepth
 import com.nuvio.app.core.ui.nuvioDesktopDragScroll
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.nuvioHorizontalScrollBleed
 import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
 import com.nuvio.app.features.details.MetaTrailer
@@ -110,6 +111,7 @@ fun DetailTrailersSection(
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
                         tonalElevation = 0.dp,
                         modifier = Modifier
+                            .nuvioFocusBorder(RoundedCornerShape(sizing.selectorRadius))
                             .clip(RoundedCornerShape(sizing.selectorRadius))
                             .clickable { menuExpanded = true },
                     ) {
@@ -205,6 +207,7 @@ private fun TrailerCard(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .nuvioFocusBorder(RoundedCornerShape(cornerRadius))
                 .clip(RoundedCornerShape(cornerRadius))
                 .nuvioCardDepth(
                     shape = RoundedCornerShape(cornerRadius),

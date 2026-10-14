@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -43,6 +44,7 @@ import com.nuvio.app.core.ui.NuvioBackButton
 import com.nuvio.app.core.ui.FullscreenActionButton
 import com.nuvio.app.core.ui.fullscreenActionHorizontalInsetForWidth
 import com.nuvio.app.core.ui.isFullscreenActionSupported
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.features.details.MetaDetails
 import com.nuvio.app.isIos
 import nuvio.composeapp.generated.resources.*
@@ -190,6 +192,7 @@ private fun DetailFloatingHeaderAction(
     Box(
         modifier = Modifier
             .size(40.dp)
+            .nuvioFocusBorder(CircleShape)
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {

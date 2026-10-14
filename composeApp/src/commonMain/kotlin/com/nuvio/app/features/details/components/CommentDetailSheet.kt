@@ -32,12 +32,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nuvio.app.core.ui.NuvioModalBottomSheet
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.features.trakt.TraktCommentReview
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -109,9 +111,13 @@ fun CommentDetailSheet(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    // NOTE: clickable is conditional (if canGoBack), so this is a
+                    // conditional focus stop — the arrow-stop count wobbles at the
+                    // list ends. Revisit in a dedicated pass; ring only for now.
                     Box(
                         modifier = Modifier
                             .size(36.dp)
+                            .nuvioFocusBorder(CircleShape)
                             .clip(CircleShape)
                             .background(
                                 if (canGoBack) MaterialTheme.colorScheme.surfaceVariant
@@ -135,9 +141,11 @@ fun CommentDetailSheet(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
 
+                    // Same conditional-clickable focus-stop wobble as the previous button.
                     Box(
                         modifier = Modifier
                             .size(36.dp)
+                            .nuvioFocusBorder(CircleShape)
                             .clip(CircleShape)
                             .background(
                                 if (canGoForward) MaterialTheme.colorScheme.surfaceVariant
@@ -184,7 +192,9 @@ fun CommentDetailSheet(
                     },
                     modifier = Modifier.then(
                         if (isSpoilerHidden) {
-                            Modifier.clickable { isSpoilerRevealed.value = true }
+                            Modifier
+                                .nuvioFocusBorder(RectangleShape)
+                                .clickable { isSpoilerRevealed.value = true }
                         } else {
                             Modifier
                         },

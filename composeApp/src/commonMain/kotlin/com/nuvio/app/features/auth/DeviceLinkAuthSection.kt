@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nuvio.app.core.auth.DeviceLinkAuthFailure
 import com.nuvio.app.core.auth.DeviceLinkAuthState
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_auth_link_cancel
 import nuvio.composeapp.generated.resources.compose_auth_link_code_expired
@@ -148,7 +149,10 @@ internal fun DeviceLinkAuthSection(
                     Spacer(modifier = Modifier.height(10.dp * scale))
                     Text(
                         text = stringResource(Res.string.compose_auth_link_cancel),
-                        modifier = Modifier.clickable(onClick = onCancel),
+                        modifier = Modifier
+                            .nuvioFocusBorder(RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable(onClick = onCancel),
                         style = MaterialTheme.typography.bodyMedium.copy(
                             color = AuthTextPrimary,
                             fontSize = (13f * scale).sp,

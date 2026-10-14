@@ -11,6 +11,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,15 +33,25 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.utf16CodePoint
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
@@ -59,10 +70,82 @@ internal fun InlinePinEntry(
     var isVerifying by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
+    val focusRequester = remember { FocusRequester() }
+
+    fun submitDigit(digit: String) {
+        if (pin.length < 4 && !isVerifying) {
+            error = null
+            pin += digit
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            if (pin.length == 4) {
+                isVerifying = true
+                scope.launch {
+                    val result = verifyPin(pin)
+                    if (result.unlocked) {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onVerified()
+                    } else {
+                        error = if (result.retryAfterSeconds > 0) {
+                            getString(Res.string.pin_locked_try_again, result.retryAfterSeconds)
+                        } else {
+                            getString(Res.string.pin_incorrect)
+                        }
+                        pin = ""
+                    }
+                    isVerifying = false
+                }
+            }
+        }
+    }
+
+    fun deleteDigit() {
+        if (pin.isNotEmpty() && !isVerifying) {
+            pin = pin.dropLast(1)
+            error = null
+        }
+    }
+
+    // Mirror PinEntryDialog: this Column is the hidden digit sink so hardware/
+    // keyboard digits, Backspace and Esc work. Initial focus uses the
+    // frame-retry idiom (the dialog may compose before focus is ready).
+    LaunchedEffect(Unit) {
+        repeat(8) {
+            withFrameNanos { }
+            if (runCatching { focusRequester.requestFocus() }.getOrDefault(false)) {
+                return@LaunchedEffect
+            }
+        }
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(top = tokens.spacing.cardPadding),
+        modifier = Modifier
+            .padding(top = tokens.spacing.cardPadding)
+            .focusRequester(focusRequester)
+            .focusable()
+            .onPreviewKeyEvent { event ->
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                val digit = event.utf16CodePoint.takeIf { it in '0'.code..'9'.code }?.toChar()?.toString()
+                when {
+                    digit != null -> {
+                        submitDigit(digit)
+                        true
+                    }
+                    event.key == Key.Backspace || event.key == Key.Delete -> {
+                        deleteDigit()
+                        true
+                    }
+                    event.key == Key.Escape -> {
+                        onCancel()
+                        true
+                    }
+                    // Single-line-entry philosophy: Left/Right belong to the PIN
+                    // entry itself (no-ops here) and must not let the global
+                    // arrow dispatcher move focus off the digit sink.
+                    event.key == Key.DirectionLeft || event.key == Key.DirectionRight -> true
+                    else -> false
+                }
+            },
     ) {
         Text(
             text = stringResource(Res.string.pin_enter_for, profileName),
@@ -126,37 +209,8 @@ internal fun InlinePinEntry(
         Spacer(modifier = Modifier.height(NuvioTokens.Space.s14))
 
         CompactPinKeypad(
-            onDigit = { digit ->
-                if (pin.length < 4 && !isVerifying) {
-                    error = null
-                    pin += digit
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    if (pin.length == 4) {
-                        isVerifying = true
-                        scope.launch {
-                            val result = verifyPin(pin)
-                            if (result.unlocked) {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                onVerified()
-                            } else {
-                                error = if (result.retryAfterSeconds > 0) {
-                                    getString(Res.string.pin_locked_try_again, result.retryAfterSeconds)
-                                } else {
-                                    getString(Res.string.pin_incorrect)
-                                }
-                                pin = ""
-                            }
-                            isVerifying = false
-                        }
-                    }
-                }
-            },
-            onBackspace = {
-                if (pin.isNotEmpty() && !isVerifying) {
-                    pin = pin.dropLast(1)
-                    error = null
-                }
-            },
+            onDigit = ::submitDigit,
+            onBackspace = ::deleteDigit,
         )
 
         Spacer(modifier = Modifier.height(tokens.spacing.controlGap))
@@ -167,6 +221,7 @@ internal fun InlinePinEntry(
             color = tokens.colors.accent,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier
+                .nuvioFocusBorder(tokens.shapes.compactCard)
                 .clip(tokens.shapes.compactCard)
                 .clickable(onClick = onCancel)
                 .padding(horizontal = tokens.spacing.cardPadding, vertical = NuvioTokens.Space.s6),
@@ -200,6 +255,7 @@ private fun CompactPinKeypad(
                             Box(
                                 modifier = Modifier
                                     .size(tokens.components.avatarSize)
+                                    .nuvioFocusBorder(tokens.shapes.avatar)
                                     .clip(tokens.shapes.avatar)
                                     .background(tokens.colors.surfaceCard)
                                     .clickable(onClick = onBackspace),
@@ -217,6 +273,7 @@ private fun CompactPinKeypad(
                             Box(
                                 modifier = Modifier
                                     .size(tokens.components.avatarSize)
+                                    .nuvioFocusBorder(tokens.shapes.avatar)
                                     .clip(tokens.shapes.avatar)
                                     .background(tokens.colors.surfaceCard)
                                     .clickable { onDigit(key) },

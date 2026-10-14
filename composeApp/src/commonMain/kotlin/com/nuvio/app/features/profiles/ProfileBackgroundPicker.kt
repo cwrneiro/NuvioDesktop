@@ -38,6 +38,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.nuvio.app.core.ui.themePalette
 import com.nuvio.app.core.ui.accentBrush
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.features.membership.ProfileBackgroundCatalogItem
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.profile_background_custom
@@ -129,6 +130,7 @@ private fun ProfileBackgroundItem(
     Column(
         modifier = Modifier
             .width(144.dp)
+            .nuvioFocusBorder(shape)
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),

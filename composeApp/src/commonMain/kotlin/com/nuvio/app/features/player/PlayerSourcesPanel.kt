@@ -8,7 +8,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.nuvio
@@ -51,6 +56,18 @@ fun PlayerSourcesPanel(
         contentTitle
     }
 
+    val firstControlFocus = remember { FocusRequester() }
+
+    LaunchedEffect(visible) {
+        if (!visible) return@LaunchedEffect
+        repeat(8) {
+            withFrameNanos { }
+            if (runCatching { firstControlFocus.requestFocus() }.getOrDefault(false)) {
+                return@LaunchedEffect
+            }
+        }
+    }
+
     PlayerSidePanel(
         visible = visible,
         onDismiss = onDismiss,
@@ -67,6 +84,7 @@ fun PlayerSourcesPanel(
                 PlayerDialogButton(
                     label = stringResource(Res.string.compose_action_reload),
                     onClick = onReload,
+                    modifier = Modifier.focusRequester(firstControlFocus),
                 )
                 PlayerDialogButton(
                     label = stringResource(Res.string.action_close),

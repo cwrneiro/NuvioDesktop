@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.accentBrush
 import com.nuvio.app.core.ui.themePalette
 import com.nuvio.app.core.ui.nuvioTypeScale
+import com.nuvio.app.core.ui.nuvioTracksSlider
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 
@@ -179,7 +180,8 @@ internal fun PlayerTimeline(
                 .height(24.dp)
                 .wrapContentHeight(Alignment.Bottom, unbounded = true)
                 .requiredHeight(48.dp)
-                .semantics { contentDescription = description },
+                .semantics { contentDescription = description }
+                .nuvioTracksSlider(),
         )
     }
 }

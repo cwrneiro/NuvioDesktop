@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,14 +39,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.withDuplicateSafeLazyKeys
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.addon_title
@@ -168,6 +173,18 @@ fun SubtitleModal(
         modifier = modifier,
         contentPadding = PaddingValues(start = 52.dp, end = 52.dp, top = 36.dp, bottom = 76.dp),
     ) {
+        val firstLanguageFocus = remember { FocusRequester() }
+
+        LaunchedEffect(visible) {
+            if (!visible) return@LaunchedEffect
+            repeat(8) {
+                withFrameNanos { }
+                if (runCatching { firstLanguageFocus.requestFocus() }.getOrDefault(false)) {
+                    return@LaunchedEffect
+                }
+            }
+        }
+
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val railMaxHeight = (maxHeight - 72.dp).coerceAtLeast(120.dp)
 
@@ -196,10 +213,11 @@ fun SubtitleModal(
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                             contentPadding = PaddingValues(vertical = 8.dp),
                         ) {
-                            items(languageItems, key = { it.key }) { item ->
+                            itemsIndexed(languageItems, key = { _, item -> item.key }) { index, item ->
                                 SubtitleLanguageRow(
                                     item = item,
                                     selected = item.key == activeLanguageKey,
+                                    modifier = if (index == 0) Modifier.focusRequester(firstLanguageFocus) else Modifier,
                                     onClick = {
                                         activeLanguageKey = item.key
                                         val availableOptions = buildSubtitleSelectionOptions(
@@ -347,6 +365,7 @@ private fun SubtitleLanguageRow(
     item: SubtitleLanguageItem,
     selected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val tokens = MaterialTheme.nuvio
     val label = when (item.key) {
@@ -356,8 +375,9 @@ private fun SubtitleLanguageRow(
     }
 
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
+            .nuvioFocusBorder(RoundedCornerShape(12.dp))
             .clip(RoundedCornerShape(12.dp))
             .background(if (selected) tokens.colors.accent else Color.Transparent)
             .clickableIncludingFlingStop(onClick = onClick)
@@ -427,6 +447,7 @@ private fun SubtitleOptionRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .nuvioFocusBorder(RoundedCornerShape(12.dp))
             .clip(RoundedCornerShape(12.dp))
             .background(if (selected) tokens.colors.accent else Color.Transparent)
             .clickableIncludingFlingStop(onClick = onClick)
@@ -513,6 +534,7 @@ private fun SubtitleRailEmptyState(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .nuvioFocusBorder(RoundedCornerShape(12.dp))
             .clip(RoundedCornerShape(12.dp))
             .then(onClick?.let { Modifier.clickable(onClick = it) } ?: Modifier)
             .padding(horizontal = 6.dp, vertical = 10.dp),

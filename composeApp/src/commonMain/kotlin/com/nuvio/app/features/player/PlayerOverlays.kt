@@ -27,13 +27,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -45,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nuvio.app.core.ui.NuvioAsyncImage as AsyncImage
 import com.nuvio.app.core.ui.NuvioBackButton
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.nuvioTypeScale
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_player_episode_code_full
@@ -284,6 +289,17 @@ internal fun ErrorModal(
     message: String,
     onDismiss: () -> Unit,
 ) {
+    val goBackFocus = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        repeat(8) {
+            withFrameNanos { }
+            if (runCatching { goBackFocus.requestFocus() }.getOrDefault(false)) {
+                return@LaunchedEffect
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -315,6 +331,8 @@ internal fun ErrorModal(
                 modifier = Modifier
                     .padding(top = 4.dp)
                     .widthIn(min = 180.dp, max = 260.dp)
+                    .focusRequester(goBackFocus)
+                    .nuvioFocusBorder(RoundedCornerShape(12.dp))
                     .clickable(onClick = onDismiss),
                 color = MaterialTheme.colorScheme.primary,
                 shape = RoundedCornerShape(12.dp),

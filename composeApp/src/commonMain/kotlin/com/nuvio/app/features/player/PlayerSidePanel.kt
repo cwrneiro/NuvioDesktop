@@ -9,7 +9,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -28,12 +28,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.NuvioLoadingIndicator
 import com.nuvio.app.core.ui.PlatformBackHandler
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.shimmer
 import com.nuvio.app.features.streams.ProviderFilterRow
 import com.nuvio.app.features.streams.StreamsUiState
@@ -57,8 +58,6 @@ internal fun PlayerSidePanel(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val tokens = MaterialTheme.nuvio
-    val backgroundInteraction = remember { MutableInteractionSource() }
-    val panelInteraction = remember { MutableInteractionSource() }
 
     PlatformBackHandler(enabled = visible, onBack = onDismiss)
 
@@ -72,11 +71,7 @@ internal fun PlayerSidePanel(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.34f))
-                .clickable(
-                    interactionSource = backgroundInteraction,
-                    indication = null,
-                    onClick = onDismiss,
-                ),
+                .pointerInput(Unit) { detectTapGestures { onDismiss() } },
         ) {
             val resolvedWidth = minOf(maxWidth, width)
             val shape = RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp)
@@ -93,11 +88,7 @@ internal fun PlayerSidePanel(
                         .fillMaxHeight()
                         .clip(shape)
                         .background(tokens.colors.surfaceElevated)
-                        .clickable(
-                            interactionSource = panelInteraction,
-                            indication = null,
-                            onClick = {},
-                        ),
+                        .pointerInput(Unit) { detectTapGestures { } },
                     content = content,
                 )
             }
@@ -147,6 +138,7 @@ internal fun PlayerDialogButton(
     Box(
         modifier = modifier
             .alpha(if (enabled) 1f else tokens.opacity.disabled)
+            .nuvioFocusBorder(RoundedCornerShape(12.dp))
             .clip(RoundedCornerShape(12.dp))
             .background(tokens.colors.surfaceCard)
             .clickable(enabled = enabled, onClick = onClick)
@@ -224,6 +216,7 @@ private fun AddonFilterChip(
 
     Box(
         modifier = modifier
+            .nuvioFocusBorder(RoundedCornerShape(20.dp))
             .clip(RoundedCornerShape(20.dp))
             .background(containerColor)
             .border(

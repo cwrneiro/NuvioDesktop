@@ -55,6 +55,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.DialogSurface
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
@@ -141,6 +142,10 @@ fun PinEntryDialog(
                             onDismiss()
                             true
                         }
+                        // Single-line-entry philosophy: Left/Right belong to the PIN
+                        // entry itself (no-ops here) and must not let the global arrow
+                        // dispatcher move focus off the digit sink.
+                        event.key == Key.DirectionLeft || event.key == Key.DirectionRight -> true
                         else -> false
                     }
                 },
@@ -198,6 +203,7 @@ fun PinEntryDialog(
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
+                        .nuvioFocusBorder(RoundedCornerShape(8.dp))
                         .clip(RoundedCornerShape(8.dp))
                         .clickable(onClick = onForgotPin)
                         .padding(horizontal = 12.dp, vertical = 6.dp),
@@ -269,6 +275,7 @@ private fun PinKeypad(
                             Box(
                                 modifier = Modifier
                                     .size(64.dp)
+                                    .nuvioFocusBorder(CircleShape)
                                     .clip(CircleShape)
                                     .background(MaterialTheme.colorScheme.surfaceVariant)
                                     .clickable(onClick = onBackspace),
@@ -286,6 +293,7 @@ private fun PinKeypad(
                             Box(
                                 modifier = Modifier
                                     .size(64.dp)
+                                    .nuvioFocusBorder(CircleShape)
                                     .clip(CircleShape)
                                     .background(MaterialTheme.colorScheme.surfaceVariant)
                                     .clickable { onDigit(key) },

@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_action_off
 import nuvio.composeapp.generated.resources.compose_action_on
@@ -260,6 +261,7 @@ private fun SubtitleStepperButton(
     Box(
         modifier = Modifier
             .size(40.dp)
+            .nuvioFocusBorder(RoundedCornerShape(12.dp))
             .clip(RoundedCornerShape(12.dp))
             .background(Color.White.copy(alpha = 0.08f))
             .clickable(onClick = onClick),
@@ -283,6 +285,7 @@ private fun SubtitleToggleChip(
 
     Box(
         modifier = Modifier
+            .nuvioFocusBorder(RoundedCornerShape(12.dp))
             .clip(RoundedCornerShape(12.dp))
             .background(if (enabled) tokens.colors.accent else Color.White.copy(alpha = 0.08f))
             .clickable(onClick = onClick)
@@ -319,6 +322,7 @@ private fun SubtitleColorPicker(
             Box(
                 modifier = Modifier
                     .size(32.dp)
+                    .nuvioFocusBorder(CircleShape)
                     .clip(CircleShape)
                     .background(color)
                     .border(
@@ -388,6 +392,7 @@ private fun SubtitleAutoSyncSection(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .nuvioFocusBorder(RoundedCornerShape(8.dp))
                     .clip(RoundedCornerShape(8.dp))
                     .background(Color.White.copy(alpha = 0.06f))
                     .clickable { onCueSelected(cue) }
@@ -425,6 +430,7 @@ private fun SubtitleTextAction(
     Box(
         modifier = Modifier
             .alpha(if (enabled) 1f else tokens.opacity.disabled)
+            .nuvioFocusBorder(RoundedCornerShape(12.dp))
             .clip(RoundedCornerShape(12.dp))
             .background(Color.White.copy(alpha = 0.08f))
             .clickable(enabled = enabled, onClick = onClick)
@@ -446,6 +452,7 @@ private fun SubtitleResetAction(
     Text(
         text = label,
         modifier = Modifier
+            .nuvioFocusBorder(RoundedCornerShape(12.dp))
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 10.dp),

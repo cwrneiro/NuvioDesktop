@@ -4,19 +4,18 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import com.nuvio.app.core.ui.PlatformBackHandler
 
 @Composable
@@ -36,16 +35,10 @@ internal fun PlayerOverlayScaffold(
         exit = fadeOut(tween(200)),
         modifier = modifier,
     ) {
-        val interactionSource = remember { MutableInteractionSource() }
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = null,
-                    onClick = onDismiss,
-                ),
+                .pointerInput(Unit) { detectTapGestures { onDismiss() } },
         ) {
             Box(
                 modifier = Modifier

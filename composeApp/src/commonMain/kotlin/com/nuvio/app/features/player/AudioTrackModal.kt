@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
@@ -23,13 +24,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_player_audio_tracks
 import nuvio.composeapp.generated.resources.compose_player_no_audio_tracks_available
@@ -50,6 +57,18 @@ fun AudioTrackModal(
         modifier = modifier,
         contentPadding = PaddingValues(start = 44.dp, end = 44.dp, top = 28.dp, bottom = 64.dp),
     ) {
+        val firstTrackFocus = remember { FocusRequester() }
+
+        LaunchedEffect(visible) {
+            if (!visible) return@LaunchedEffect
+            repeat(8) {
+                withFrameNanos { }
+                if (runCatching { firstTrackFocus.requestFocus() }.getOrDefault(false)) {
+                    return@LaunchedEffect
+                }
+            }
+        }
+
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val railWidth = minOf(maxWidth, 444.dp)
             val railMaxHeight = (maxHeight - 64.dp).coerceAtLeast(120.dp).coerceAtMost(620.dp)
@@ -83,11 +102,12 @@ fun AudioTrackModal(
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                         contentPadding = PaddingValues(vertical = 8.dp),
                     ) {
-                        items(audioTracks, key = { "${it.index}:${it.id}" }) { track ->
+                        itemsIndexed(audioTracks, key = { _, track -> "${track.index}:${track.id}" }) { index, track ->
                             AudioTrackRow(
                                 track = track,
                                 isSelected = track.index == selectedIndex,
                                 onClick = { onTrackSelected(track.index) },
+                                modifier = if (index == 0) Modifier.focusRequester(firstTrackFocus) else Modifier,
                             )
                         }
                     }
@@ -102,6 +122,7 @@ private fun AudioTrackRow(
     track: AudioTrack,
     isSelected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val tokens = MaterialTheme.nuvio
     val primaryColor = if (isSelected) tokens.colors.onAccent else Color.White
@@ -112,8 +133,9 @@ private fun AudioTrackRow(
     }
 
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
+            .nuvioFocusBorder(RoundedCornerShape(12.dp))
             .clip(RoundedCornerShape(12.dp))
             .background(if (isSelected) tokens.colors.accent else Color.Transparent)
             .clickable(onClick = onClick)

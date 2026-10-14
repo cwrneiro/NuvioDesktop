@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
@@ -48,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import com.nuvio.app.core.ui.AppIconResource
 import com.nuvio.app.core.ui.NuvioBackButton
 import com.nuvio.app.core.ui.appIconPainter
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.nuvioTypeScale
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -196,7 +199,7 @@ internal fun PlayerControlActions(
                 }
             }
             Box(
-                modifier = Modifier.height(48.dp).widthIn(min = 48.dp).clickable(
+                modifier = Modifier.height(48.dp).widthIn(min = 48.dp).nuvioFocusBorder(RoundedCornerShape(12.dp)).clickable(
                     role = Role.Button,
                     onClickLabel = stringResource(
                         if (showRemainingTime) Res.string.compose_player_show_elapsed_time else Res.string.compose_player_show_remaining_time,
@@ -227,7 +230,10 @@ private fun PlayerAction(
     painter: Painter? = null,
     iconSize: Dp = 24.dp,
 ) {
-    IconButton(onClick = onClick, modifier = Modifier.size(48.dp)) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier.nuvioFocusBorder(CircleShape).size(48.dp),
+    ) {
         if (painter != null) {
             Icon(painter, description, tint = Color.White, modifier = Modifier.size(iconSize))
         } else if (icon != null) {

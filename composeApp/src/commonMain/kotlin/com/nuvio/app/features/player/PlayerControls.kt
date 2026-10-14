@@ -72,6 +72,8 @@ import com.nuvio.app.core.ui.themePalette
 import com.nuvio.app.core.ui.accentBrush
 import com.nuvio.app.core.ui.appIconPainter
 import com.nuvio.app.core.ui.gradientMask
+import com.nuvio.app.core.ui.nuvioFocusBorder
+import com.nuvio.app.core.ui.nuvioTracksSlider
 import com.nuvio.app.core.ui.nuvioTypeScale
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -486,6 +488,7 @@ internal fun PlayerHeaderIconButton(
     Box(
         modifier = Modifier
             .size(buttonSize)
+            .nuvioFocusBorder(CircleShape)
             .clip(CircleShape)
             .background(Color.Black.copy(alpha = 0.35f))
             .clickable(onClick = onClick),
@@ -544,6 +547,7 @@ private fun SideControlButton(
 ) {
     Box(
         modifier = Modifier
+            .nuvioFocusBorder(CircleShape)
             .clip(CircleShape)
             .clickable(onClick = onClick)
             .padding(metrics.sideButtonPadding),
@@ -571,6 +575,7 @@ internal fun PlayPauseControlButton(
 
     Box(
         modifier = Modifier
+            .nuvioFocusBorder(CircleShape)
             .clip(CircleShape)
             .clickable(onClick = onClick)
             .padding(metrics.playButtonPadding),
@@ -700,7 +705,8 @@ internal fun PlayerSeekBar(
                 .fillMaxWidth()
                 .height(metrics.sliderTouchHeight)
                 .graphicsLayer(scaleY = metrics.sliderScaleY)
-                .semantics { contentDescription = seekDescription },
+                .semantics { contentDescription = seekDescription }
+                .nuvioTracksSlider(),
             value = displayedPositionMs.coerceIn(0L, seekDurationMs).toFloat(),
             onValueChange = { value -> onScrubChange(value.toLong()) },
             onValueChangeFinished = { onScrubFinished(displayedPositionMs.coerceIn(0L, seekDurationMs)) },
@@ -795,6 +801,7 @@ internal fun LockedPlayerOverlay(
             Box(
                 modifier = Modifier
                     .size(78.dp)
+                    .nuvioFocusBorder(CircleShape)
                     .clip(CircleShape)
                     .background(Color.Black.copy(alpha = 0.52f))
                     .border(1.dp, Color.White.copy(alpha = 0.18f), CircleShape)
@@ -828,7 +835,8 @@ internal fun LockedPlayerOverlay(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(metrics.sliderTouchHeight)
-                        .graphicsLayer(scaleY = metrics.sliderScaleY),
+                        .graphicsLayer(scaleY = metrics.sliderScaleY)
+                        .nuvioTracksSlider(),
                     value = displayedPositionMs.coerceIn(0L, durationMs).toFloat(),
                     onValueChange = {},
                     onValueChangeFinished = {},
@@ -899,6 +907,7 @@ private fun PlayerActionPillButton(
 ) {
     Row(
         modifier = Modifier
+            .nuvioFocusBorder(RoundedCornerShape(22.dp))
             .clip(RoundedCornerShape(22.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 12.dp),

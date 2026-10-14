@@ -61,6 +61,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
@@ -1061,7 +1062,8 @@ private fun TabletSettingsScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = effectiveTopOffset),
+                    .padding(top = effectiveTopOffset)
+                    .testTag("settings-categories"),
             ) {
                 Text(
                     text = stringResource(Res.string.compose_settings_page_root),
@@ -1195,6 +1197,7 @@ private fun TabletSettingsScreen(
                         .fillMaxWidth()
                         .weight(1f)
                         .nuvioDebugFocusGroupTag("content-group")
+                        .testTag("settings-subpage-content")
                         .focusRestorer()
                         .focusGroup()
                         .focusRequester(contentGroupRequester)

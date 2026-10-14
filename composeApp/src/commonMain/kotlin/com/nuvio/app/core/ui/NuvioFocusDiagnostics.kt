@@ -5,7 +5,7 @@ import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 
 /** cwrneirOS: single switch for focus diagnostics. Set enabled = false at closeout. */
 internal object NuvioFocusDiagnostics {
-    var enabled: Boolean = true
+    var enabled: Boolean = false
     fun log(message: String) {
         if (enabled) println(message)
     }

@@ -7,7 +7,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
@@ -71,7 +73,14 @@ class SettingsSubpageEntryTest {
         compose.mainClock.advanceTimeBy(500)
         compose.waitForIdle()
 
-        // Focus must be on a ringed, actionable node after entry.
-        compose.onNode(isFocused() and ringed and hasClickAction()).assertExists()
+        // Focus must be on a ringed, actionable node inside the subpage content
+        // group after entry, and never on a category-sidebar item — the weak
+        // "some ringed node" check passed even when content entry failed.
+        compose.onNode(
+            isFocused() and ringed and hasClickAction() and hasAnyAncestor(hasTestTag("settings-subpage-content")),
+        ).assertExists()
+        compose.onNode(
+            isFocused() and hasAnyAncestor(hasTestTag("settings-categories")),
+        ).assertDoesNotExist()
     }
 }

@@ -274,9 +274,9 @@ private class NuvioNavigationBarScopeImpl(
             Column(
                 modifier = modifier
                     .weight(1f)
+                    .nuvioFocusBorder(navItemShape)
                     .clip(navItemShape)
                     .background(selectedBgColor)
-                    .nuvioFocusBorder(navItemShape)
                     .selectable(
                         selected = selected,
                         enabled = true,
@@ -325,9 +325,9 @@ private class NuvioNavigationBarScopeImpl(
             Column(
                 modifier = modifier
                     .weight(1f)
+                    .nuvioFocusBorder(navItemShape)
                     .clip(navItemShape)
                     .background(selectedBgColor)
-                    .nuvioFocusBorder(navItemShape)
                     .selectable(
                         selected = selected,
                         enabled = true,
@@ -374,9 +374,9 @@ private class NuvioNavigationBarScopeImpl(
             Column(
                 modifier = modifier
                     .weight(1f)
+                    .nuvioFocusBorder(navItemShape)
                     .clip(navItemShape)
                     .background(selectedBgColor)
-                    .nuvioFocusBorder(navItemShape)
                     .selectable(
                         selected = selected,
                         enabled = true,

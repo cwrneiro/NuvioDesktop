@@ -285,7 +285,6 @@ fun SearchScreen(
                         NuvioInputField(
                             value = query,
                             onValueChange = {
-                                focusRequester.captureFocus()
                                 query = it
                             },
                             placeholder = stringResource(Res.string.compose_search_placeholder),
@@ -293,11 +292,6 @@ fun SearchScreen(
                                 .focusRequester(focusRequester)
                                 .onFocusChanged {
                                     isSearchFocused = it.isFocused
-                                    // cwrneirOS: only capture on gain. Re-capturing on
-                                    // focus loss (the previous unconditional capture
-                                    // when query was non-blank) stole focus back and
-                                    // trapped arrows inside the field.
-                                    if (it.isFocused && query.isNotBlank()) focusRequester.captureFocus()
                                 },
                             trailingContent = if (query.isNotBlank()) {
                                 {
@@ -324,7 +318,6 @@ fun SearchScreen(
 
         if (query.isBlank()) {
             if (isSearchFocused && recentSearches.isNotEmpty()) {
-                focusRequester.captureFocus()
                 item(key = "recent_searches") {
                     SearchRecentSection(
                         recentSearches = recentSearches,

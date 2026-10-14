@@ -32,7 +32,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,6 +50,7 @@ import com.nuvio.app.core.ui.NuvioAsyncImage as AsyncImage
 import com.nuvio.app.core.ui.NuvioBackButton
 import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.nuvioTypeScale
+import com.nuvio.app.core.ui.requestFocusWhenPlaced
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_player_episode_code_full
 import nuvio.composeapp.generated.resources.compose_player_go_back
@@ -292,12 +292,7 @@ internal fun ErrorModal(
     val goBackFocus = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
-        repeat(8) {
-            withFrameNanos { }
-            if (runCatching { goBackFocus.requestFocus() }.getOrDefault(false)) {
-                return@LaunchedEffect
-            }
-        }
+        goBackFocus.requestFocusWhenPlaced()
     }
 
     Box(

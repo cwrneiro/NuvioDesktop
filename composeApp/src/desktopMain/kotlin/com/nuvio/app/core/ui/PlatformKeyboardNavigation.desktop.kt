@@ -8,7 +8,6 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
 import com.nuvio.app.core.ui.PlatformFocusPresence
 import java.awt.Component
-import java.awt.Container
 import java.awt.KeyEventDispatcher
 import java.awt.KeyboardFocusManager
 import java.awt.TextComponent
@@ -18,7 +17,6 @@ import javax.swing.JSlider
 import javax.swing.JSpinner
 import javax.swing.JTextArea
 import javax.swing.JTextField
-import javax.swing.Scrollable
 import javax.swing.SwingUtilities
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -112,6 +110,5 @@ private fun Component?.isArrowKeyConsumer(): Boolean = when (this) {
     is JSpinner -> true
     is JSlider -> true
     is JScrollPane -> true
-    is Container -> this is Scrollable
     else -> false
 }

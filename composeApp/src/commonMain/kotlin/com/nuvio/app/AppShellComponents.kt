@@ -42,6 +42,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -743,10 +744,28 @@ internal fun DesktopHoverSidebar(
     val settingsFocusRequester = remember { FocusRequester() }
     // cwrneirOS round 4b: expose the rail requesters so Left from content/rail can
     // return to the owning tab icon (read by RootTabHost and SettingsScreen).
-    SettingsFocusLinks.railEntries[AppScreenTab.Home] = homeFocusRequester
-    SettingsFocusLinks.railEntries[AppScreenTab.Search] = searchFocusRequester
-    SettingsFocusLinks.railEntries[AppScreenTab.Library] = libraryFocusRequester
-    SettingsFocusLinks.railEntries[AppScreenTab.Settings] = settingsFocusRequester
+    // Registered in a DisposableEffect (not in the composition body) so each
+    // entry is symmetrically unregistered when this sidebar leaves composition.
+    DisposableEffect(Unit) {
+        SettingsFocusLinks.railEntries[AppScreenTab.Home] = homeFocusRequester
+        SettingsFocusLinks.railEntries[AppScreenTab.Search] = searchFocusRequester
+        SettingsFocusLinks.railEntries[AppScreenTab.Library] = libraryFocusRequester
+        SettingsFocusLinks.railEntries[AppScreenTab.Settings] = settingsFocusRequester
+        onDispose {
+            if (SettingsFocusLinks.railEntries[AppScreenTab.Home] === homeFocusRequester) {
+                SettingsFocusLinks.railEntries.remove(AppScreenTab.Home)
+            }
+            if (SettingsFocusLinks.railEntries[AppScreenTab.Search] === searchFocusRequester) {
+                SettingsFocusLinks.railEntries.remove(AppScreenTab.Search)
+            }
+            if (SettingsFocusLinks.railEntries[AppScreenTab.Library] === libraryFocusRequester) {
+                SettingsFocusLinks.railEntries.remove(AppScreenTab.Library)
+            }
+            if (SettingsFocusLinks.railEntries[AppScreenTab.Settings] === settingsFocusRequester) {
+                SettingsFocusLinks.railEntries.remove(AppScreenTab.Settings)
+            }
+        }
+    }
     // cwrneirOS consolidation: declarative rail corridor (see corridorEdges).
     val railRequesters = listOf(
         avatarFocusRequester,

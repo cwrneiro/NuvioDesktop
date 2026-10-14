@@ -29,7 +29,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -48,6 +47,7 @@ import com.nuvio.app.core.ui.NuvioAnimatedWatchedBadge
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.core.ui.nuvioFocusBorder
+import com.nuvio.app.core.ui.requestFocusWhenPlaced
 import com.nuvio.app.features.details.MetaVideo
 import com.nuvio.app.features.streams.StreamItem
 import com.nuvio.app.features.streams.StreamsUiState
@@ -93,12 +93,7 @@ fun PlayerEpisodesPanel(
 
     LaunchedEffect(visible) {
         if (!visible) return@LaunchedEffect
-        repeat(8) {
-            withFrameNanos { }
-            if (runCatching { firstControlFocus.requestFocus() }.getOrDefault(false)) {
-                return@LaunchedEffect
-            }
-        }
+        firstControlFocus.requestFocusWhenPlaced()
     }
 
     PlayerSidePanel(

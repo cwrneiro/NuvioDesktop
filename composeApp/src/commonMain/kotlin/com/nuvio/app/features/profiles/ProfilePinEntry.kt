@@ -33,7 +33,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,6 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.core.ui.nuvioFocusBorder
+import com.nuvio.app.core.ui.requestFocusWhenPlaced
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
@@ -106,15 +106,10 @@ internal fun InlinePinEntry(
     }
 
     // Mirror PinEntryDialog: this Column is the hidden digit sink so hardware/
-    // keyboard digits, Backspace and Esc work. Initial focus uses the
+    // keyboard digits, Backspace and Esc work. Initial focus uses the shared
     // frame-retry idiom (the dialog may compose before focus is ready).
     LaunchedEffect(Unit) {
-        repeat(8) {
-            withFrameNanos { }
-            if (runCatching { focusRequester.requestFocus() }.getOrDefault(false)) {
-                return@LaunchedEffect
-            }
-        }
+        focusRequester.requestFocusWhenPlaced()
     }
 
     Column(

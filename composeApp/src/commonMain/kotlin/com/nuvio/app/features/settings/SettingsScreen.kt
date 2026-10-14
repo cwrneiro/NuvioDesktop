@@ -74,6 +74,7 @@ import com.nuvio.app.core.ui.NuvioScreen
 import com.nuvio.app.core.ui.NuvioScreenHeader
 import com.nuvio.app.core.ui.PlatformBackHandler
 import com.nuvio.app.core.ui.PlatformFocusPresence
+import com.nuvio.app.core.ui.requestFocusWhenPlaced
 import com.nuvio.app.core.ui.SettingsFocusLinks
 import com.nuvio.app.core.ui.nuvioDebugFocusGroupTag
 import com.nuvio.app.core.ui.nuvioDebugFocusTag
@@ -977,6 +978,14 @@ private fun TabletSettingsScreen(
 
     DisposableEffect(Unit) {
         SettingsFocusLinks.categoryEntry = categoryEntryRequester
+        // cwrneirOS consolidation fix (2026-10-08): target the always-composed
+        // content-group Box on BOTH Root and subpages. Its first row
+        // (contentEntryRequester) / header back button are uncomposed once the pane is
+        // scrolled, so Right from a category (or on subpage re-entry) used to no-op or
+        // land on the wrong node; the group redirects into a placed (visible) child.
+        // Assigned here (not in the composition body) so registration and
+        // unregistration stay symmetric across recompositions.
+        SettingsFocusLinks.contentEntry = contentGroupRequester
         onDispose {
             if (SettingsFocusLinks.categoryEntry === categoryEntryRequester) SettingsFocusLinks.categoryEntry = null
             if (SettingsFocusLinks.contentEntry === contentEntryRequester) SettingsFocusLinks.contentEntry = null
@@ -984,12 +993,6 @@ private fun TabletSettingsScreen(
             if (SettingsFocusLinks.contentEntry === contentGroupRequester) SettingsFocusLinks.contentEntry = null
         }
     }
-    // cwrneirOS consolidation fix (2026-10-08): target the always-composed
-    // content-group Box on BOTH Root and subpages. Its first row
-    // (contentEntryRequester) / header back button are uncomposed once the pane is
-    // scrolled, so Right from a category (or on subpage re-entry) used to no-op or
-    // land on the wrong node; the group redirects into a placed (visible) child.
-    SettingsFocusLinks.contentEntry = contentGroupRequester
 
     LaunchedEffect(page) {
         if (page.opensInlineOnTablet) {
@@ -1011,8 +1014,7 @@ private fun TabletSettingsScreen(
             // effect or a recomposition could otherwise take focus back and leave
             // the subpage ring invisible.
             repeat(SettingsContentFocusRetryFrames) {
-                withFrameNanos { }
-                if (backRequester.requestFocus()) {
+                if (backRequester.requestFocusWhenPlaced(maxFrames = 1)) {
                     // cwrneirOS round 4d: move on to the first content entry in the
                     // same frame so the back-button ring never paints; the back
                     // button stays reachable via Up.
@@ -1021,7 +1023,7 @@ private fun TabletSettingsScreen(
                     if (PlatformFocusPresence.hasFocus && !PlatformFocusPresence.anchorActive) {
                         return@LaunchedEffect
                     }
-                } else if (contentGroupRequester.requestFocus()) {
+                } else if (contentGroupRequester.requestFocusWhenPlaced(maxFrames = 1)) {
                     // cwrneirOS: scrolled subpage — the header back button is
                     // uncomposed, so fall back to the always-composed content
                     // group, which redirects into a placed (visible) row.
@@ -1033,8 +1035,7 @@ private fun TabletSettingsScreen(
             }
         } else {
             repeat(SettingsContentFocusRetryFrames) {
-                withFrameNanos { }
-                if (SettingsFocusLinks.categoryEntry?.requestFocus() == true) {
+                if (SettingsFocusLinks.categoryEntry?.requestFocusWhenPlaced(maxFrames = 1) == true) {
                     withFrameNanos { }
                     if (PlatformFocusPresence.hasFocus && !PlatformFocusPresence.anchorActive) {
                         return@LaunchedEffect
@@ -1091,10 +1092,7 @@ private fun TabletSettingsScreen(
                                 }
                             }
                             focusRequestScope.launch {
-                                repeat(SettingsContentFocusRetryFrames) {
-                                    withFrameNanos { }
-                                    if (SettingsFocusLinks.contentEntry?.requestFocus() == true) return@launch
-                                }
+                                SettingsFocusLinks.contentEntry?.requestFocusWhenPlaced()
                             }
                         },
                         modifier = Modifier
@@ -1147,6 +1145,10 @@ private fun TabletSettingsScreen(
                     }
                 }
 
+                // cwrneirOS: subpages deliberately reset scroll (plain remember, no
+                // Saver) so re-entry lands unscrolled — the header back button is
+                // then composed and the page-entry focus effect finds it
+                // deterministically; Root keeps save/restore.
                 val listState = if (page == SettingsPage.Root) {
                     rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
                 } else {

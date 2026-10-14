@@ -10,13 +10,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.ui.requestFocusWhenPlaced
 import com.nuvio.app.features.streams.StreamItem
 import com.nuvio.app.features.streams.StreamsUiState
 import nuvio.composeapp.generated.resources.Res
@@ -60,12 +60,7 @@ fun PlayerSourcesPanel(
 
     LaunchedEffect(visible) {
         if (!visible) return@LaunchedEffect
-        repeat(8) {
-            withFrameNanos { }
-            if (runCatching { firstControlFocus.requestFocus() }.getOrDefault(false)) {
-                return@LaunchedEffect
-            }
-        }
+        firstControlFocus.requestFocusWhenPlaced()
     }
 
     PlayerSidePanel(

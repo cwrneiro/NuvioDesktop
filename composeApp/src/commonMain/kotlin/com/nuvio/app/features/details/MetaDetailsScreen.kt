@@ -57,7 +57,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
+import com.nuvio.app.core.ui.seedFocusIfUnfocused
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -371,14 +371,13 @@ fun MetaDetailsScreen(
 
     // cwrneirOS: details has no entry focus effect, so after the nav push removes
     // the poster that held focus, focus parks on the desktop back button and
-    // Up/Down/Right never reach the content. Request the primary action (play)
-    // across a few frames until it is placed, mirroring the Settings entry pattern.
+    // Up/Down/Right never reach the content. Seed the primary action (play)
+    // across a few frames until it is placed, mirroring the Settings entry
+    // pattern — but only while nothing else holds focus, so a re-arrival of
+    // data never steals focus from what the user is operating.
     LaunchedEffect(displayedMeta?.id) {
         if (displayedMeta == null) return@LaunchedEffect
-        repeat(8) {
-            withFrameNanos { }
-            if (primaryActionFocusRequester.requestFocus()) return@LaunchedEffect
-        }
+        seedFocusIfUnfocused(primaryActionFocusRequester)
     }
 
     LaunchedEffect(displayedMeta?.id, shouldShowComments, deferredMetaWorkAllowed) {

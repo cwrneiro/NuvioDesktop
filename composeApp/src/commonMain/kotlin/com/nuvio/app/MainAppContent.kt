@@ -301,8 +301,13 @@ internal fun MainAppContent(
                 // park on the anchor only if focus is still nowhere. The old
                 // effect captured anyFocus=false and could take focus right back
                 // from the back button, leaving the subpage ring invisible.
+                // Deliberately a single guarded attempt, NOT
+                // requestFocusWhenPlaced: the post-frame presence gate IS the
+                // arbitration here and must keep preceding the request.
                 withFrameNanos { }
-                if (!PlatformFocusPresence.hasFocus) rootFocusAnchor.requestFocus()
+                if (!PlatformFocusPresence.hasFocus) {
+                    runCatching { rootFocusAnchor.requestFocus() }
+                }
             }
         }
         val liquidGlassNativeTabBarEnabled by remember {

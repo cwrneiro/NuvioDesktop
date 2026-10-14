@@ -26,7 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +36,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.core.ui.nuvioFocusBorder
+import com.nuvio.app.core.ui.requestFocusWhenPlaced
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_player_audio_tracks
 import nuvio.composeapp.generated.resources.compose_player_no_audio_tracks_available
@@ -61,12 +61,7 @@ fun AudioTrackModal(
 
         LaunchedEffect(visible) {
             if (!visible) return@LaunchedEffect
-            repeat(8) {
-                withFrameNanos { }
-                if (runCatching { firstTrackFocus.requestFocus() }.getOrDefault(false)) {
-                    return@LaunchedEffect
-                }
-            }
+            firstTrackFocus.requestFocusWhenPlaced()
         }
 
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {

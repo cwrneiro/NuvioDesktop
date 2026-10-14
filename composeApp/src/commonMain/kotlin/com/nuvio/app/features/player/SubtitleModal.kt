@@ -39,7 +39,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,6 +50,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.core.ui.nuvioFocusBorder
+import com.nuvio.app.core.ui.requestFocusWhenPlaced
 import com.nuvio.app.core.ui.withDuplicateSafeLazyKeys
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.addon_title
@@ -177,12 +177,7 @@ fun SubtitleModal(
 
         LaunchedEffect(visible) {
             if (!visible) return@LaunchedEffect
-            repeat(8) {
-                withFrameNanos { }
-                if (runCatching { firstLanguageFocus.requestFocus() }.getOrDefault(false)) {
-                    return@LaunchedEffect
-                }
-            }
+            firstLanguageFocus.requestFocusWhenPlaced()
         }
 
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {

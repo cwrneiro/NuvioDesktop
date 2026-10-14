@@ -30,6 +30,11 @@ private object FocusPresenceElement : ModifierNodeElement<FocusPresenceNode>() {
 
 private class FocusPresenceNode : DelegatingNode() {
     init {
+        // Upgrade watchlist: FocusTargetModifierNode is advanced/low-level
+        // focus API — this delegation (Focusability.Never + the focus-change
+        // callback) bypasses the public modifier builders, and its constructor
+        // shape may shift on a Compose Multiplatform upgrade. Re-verify this
+        // call site against the compose-ui changelog when bumping CMP.
         delegate(
             FocusTargetModifierNode(focusability = Focusability.Never) { _, current ->
                 PlatformFocusPresence.hasFocus = current.hasFocus

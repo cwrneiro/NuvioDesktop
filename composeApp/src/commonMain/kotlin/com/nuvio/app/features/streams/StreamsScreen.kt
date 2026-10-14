@@ -48,7 +48,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -88,6 +87,7 @@ import com.nuvio.app.core.ui.NuvioModalBottomSheet
 import com.nuvio.app.core.ui.NuvioToastController
 import com.nuvio.app.core.ui.dismissNuvioBottomSheet
 import com.nuvio.app.core.ui.nuvioFocusBorder
+import com.nuvio.app.core.ui.requestFocusWhenPlaced
 import com.nuvio.app.core.ui.withDuplicateSafeLazyKeys
 import com.nuvio.app.features.downloads.DownloadsRepository
 import com.nuvio.app.features.details.MetaScreenSettingsRepository
@@ -1224,12 +1224,7 @@ private fun DesktopStreamActionsMenu(
     val firstActionFocus = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
-        repeat(8) {
-            withFrameNanos { }
-            if (runCatching { firstActionFocus.requestFocus() }.getOrDefault(false)) {
-                return@LaunchedEffect
-            }
-        }
+        firstActionFocus.requestFocusWhenPlaced()
     }
 
     Popup(

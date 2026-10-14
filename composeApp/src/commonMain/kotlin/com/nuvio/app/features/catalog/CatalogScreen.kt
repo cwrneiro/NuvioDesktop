@@ -35,7 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.runtime.withFrameNanos
+import com.nuvio.app.core.ui.seedFocusIfUnfocused
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -133,10 +133,9 @@ fun CatalogScreen(
 
     LaunchedEffect(uiState.items.isNotEmpty()) {
         if (uiState.items.isEmpty()) return@LaunchedEffect
-        repeat(8) {
-            withFrameNanos { }
-            if (gridFocusRequester.requestFocus()) return@LaunchedEffect
-        }
+        // Seed only while nothing holds focus: data arrival must not steal
+        // focus from whatever the user is already operating.
+        seedFocusIfUnfocused(gridFocusRequester)
     }
 
     LaunchedEffect(gridState, target, homeCatalogSettingsUiState.hideUnreleasedContent) {

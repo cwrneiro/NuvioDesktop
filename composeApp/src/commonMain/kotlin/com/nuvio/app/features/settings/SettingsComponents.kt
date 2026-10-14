@@ -288,7 +288,7 @@ internal fun SettingsNavigationRow(
             // trailing content keep their original absolute position
             // (SettingsGroupDivider is pinned to that alignment).
             .padding(
-                horizontal = horizontalPadding - NuvioTokens.Space.s4,
+                horizontal = (horizontalPadding - NuvioTokens.Space.s4).coerceAtLeast(NuvioTokens.Space.s4),
                 vertical = verticalPadding,
             )
             .alpha(if (enabled) NuvioTokens.Opacity.visible else tokens.opacity.medium),
@@ -378,7 +378,7 @@ internal fun SettingsSwitchRow(
             .focusProperties { SettingsFocusLinks.categoryEntry?.let { left = it } }
             .clickable(enabled = enabled) { onCheckedChange(!checked) }
             .padding(
-                horizontal = horizontalPadding - NuvioTokens.Space.s4,
+                horizontal = (horizontalPadding - NuvioTokens.Space.s4).coerceAtLeast(NuvioTokens.Space.s4),
                 vertical = verticalPadding,
             ),
         horizontalArrangement = Arrangement.Start,
@@ -504,7 +504,7 @@ internal fun HomescreenCatalogRow(
             .nuvioFocusBorder(RoundedCornerShape(NuvioTokens.Space.s4))
             .clickable { onExpandedChange(!expanded) }
             .padding(
-                horizontal = horizontalPadding - NuvioTokens.Space.s4,
+                horizontal = (horizontalPadding - NuvioTokens.Space.s4).coerceAtLeast(NuvioTokens.Space.s4),
                 vertical = verticalPadding,
             ),
         verticalArrangement = Arrangement.spacedBy(12.dp),

@@ -25,7 +25,10 @@ actual fun PlatformKeyboardNavigation() {
     val focusManager = LocalFocusManager.current
     val window = LocalAwtWindow.current
 
-    DisposableEffect(Unit) {
+    // Keyed on window: if the host window is ever recreated, the dispatcher is
+    // reinstalled with the new reference instead of treating main-window events
+    // as foreign and dropping all arrow handling.
+    DisposableEffect(window) {
         val dispatcher = KeyEventDispatcher { event: KeyEvent ->
             if (event.id != KeyEvent.KEY_PRESSED) return@KeyEventDispatcher false
             // Dialogs/menus/dropdown popups are separate ComposeWindows: when one

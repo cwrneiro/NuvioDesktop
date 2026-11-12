@@ -45,6 +45,30 @@ On Windows PowerShell:
 .\gradlew.bat :composeApp:run
 ```
 
+### Test
+
+```bash
+./gradlew :composeApp:desktopTest
+```
+
+Requires JDK 17+ (Gradle 9). If the native player bridge cannot build on your
+machine (missing gstreamer/libmpv/webkit development libraries), exclude it:
+
+```bash
+./gradlew :composeApp:desktopTest \
+  -x :composeMediaPlayer:buildNativeLinux -x :composeApp:buildLinuxPlayerBridge
+```
+
+Keyboard/remote (D-pad) navigation has a hardware suite that opens real windows
+and injects real AWT key events. It needs a display and is skipped otherwise:
+
+```bash
+NUVIO_FOCUS_HW_TEST=1 ./gradlew :composeApp:desktopTest --tests "*AwtDispatcherModalFocusTest*"
+```
+
+See [docs/focus-navigation.md](docs/focus-navigation.md) for how keyboard/remote
+navigation works and the invariants modal layers must follow.
+
 ### Package the app
 
 Build a release package for the current host:

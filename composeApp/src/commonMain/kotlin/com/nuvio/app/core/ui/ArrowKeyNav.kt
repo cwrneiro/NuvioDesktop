@@ -1,6 +1,15 @@
 package com.nuvio.app.core.ui
 
+import androidx.compose.ui.focus.FocusDirection
+
 internal enum class NuvioNavKey { Left, Right, Up, Down }
+
+internal fun NuvioNavKey.toFocusDirection(): FocusDirection = when (this) {
+    NuvioNavKey.Left -> FocusDirection.Left
+    NuvioNavKey.Right -> FocusDirection.Right
+    NuvioNavKey.Up -> FocusDirection.Up
+    NuvioNavKey.Down -> FocusDirection.Down
+}
 
 /**
  * True when an arrow press should be consumed for focus navigation.

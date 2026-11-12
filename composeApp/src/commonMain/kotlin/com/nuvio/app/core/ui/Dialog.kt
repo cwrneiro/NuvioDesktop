@@ -17,10 +17,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -42,7 +40,6 @@ enum class DialogButtonStyle {
     Destructive,
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DialogSurface(
     onDismissRequest: () -> Unit,
@@ -53,7 +50,7 @@ fun DialogSurface(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val tokens = MaterialTheme.nuvio
-    BasicAlertDialog(onDismissRequest = onDismissRequest, properties = properties) {
+    NuvioModalDialog(onDismissRequest = onDismissRequest, properties = properties) {
         Surface(
             modifier = modifier
                 .fillMaxWidth()

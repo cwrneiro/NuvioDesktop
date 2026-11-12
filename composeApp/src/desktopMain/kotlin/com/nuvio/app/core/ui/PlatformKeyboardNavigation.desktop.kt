@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.LocalAwtWindow
-import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
 import com.nuvio.app.core.ui.PlatformFocusPresence
 import java.awt.Component
@@ -23,14 +22,22 @@ import javax.swing.SwingUtilities
 @Composable
 actual fun PlatformKeyboardNavigation() {
     val focusManager = LocalFocusManager.current
-    val window = LocalAwtWindow.current
+    val window = LocalNuvioMainWindow.current ?: LocalAwtWindow.current
 
     // Keyed on window: if the host window is ever recreated, the dispatcher is
     // reinstalled with the new reference instead of treating main-window events
     // as foreign and dropping all arrow handling.
     DisposableEffect(window) {
+        NuvioFocusDiagnostics.log(
+            "nuvio-nav-install window=${window?.javaClass?.name ?: "null"}",
+        )
         val dispatcher = KeyEventDispatcher { event: KeyEvent ->
             if (event.id != KeyEvent.KEY_PRESSED) return@KeyEventDispatcher false
+            // A modal dialog owns the keyboard: its focus manager is its own,
+            // so moving focus through the main composition would land behind
+            // the modal. Dialog content traverses its own focus instead
+            // (NuvioModalDialog / nuvioModalArrowNav).
+            if (PlatformModalState.hasOpenDialog) return@KeyEventDispatcher false
             // Dialogs/menus/dropdown popups are separate ComposeWindows: when one
             // of them owns focus it must receive its own keys, so only handle
             // events that belong to the main window. A null window is a defensive
@@ -99,12 +106,7 @@ private fun KeyEvent.toNuvioNavKey(): NuvioNavKey? = when (keyCode) {
     else -> null
 }
 
-private fun NuvioNavKey.toFocusDirection(): FocusDirection = when (this) {
-    NuvioNavKey.Left -> FocusDirection.Left
-    NuvioNavKey.Right -> FocusDirection.Right
-    NuvioNavKey.Up -> FocusDirection.Up
-    NuvioNavKey.Down -> FocusDirection.Down
-}
+
 
 private fun Component?.isArrowKeyConsumer(): Boolean = when (this) {
     is JTextField -> true

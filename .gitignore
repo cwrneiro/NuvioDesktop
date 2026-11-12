@@ -41,3 +41,6 @@ iosApp/Configuration/DeviceSigning.local.json
 
 composeApp/hs_err_pid*.log
 hs_err_pid*.log
+
+# Local agent tooling state
+.opencode/

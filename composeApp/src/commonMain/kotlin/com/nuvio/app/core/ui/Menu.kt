@@ -18,6 +18,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,17 +43,26 @@ fun Menu(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val tokens = MaterialTheme.nuvio
+    val layerFocus = remember { FocusRequester() }
+    val layerSeeded = remember { mutableStateOf(false) }
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
-        modifier = modifier.widthIn(min = MenuMinWidth),
+        modifier = modifier
+            .widthIn(min = MenuMinWidth)
+            .nuvioModalFocusTarget(layerFocus, directionalTargetEnabled = !layerSeeded.value)
+            .nuvioModalArrowNav(),
         offset = offset,
         shape = MenuShape,
         containerColor = tokens.colors.surfacePopover,
         tonalElevation = tokens.elevation.flat,
         shadowElevation = tokens.elevation.overlay,
         border = BorderStroke(tokens.borders.thin, SurfaceEdge),
-        content = content,
+        content = {
+            NuvioModalRegistration()
+            NuvioModalFocusSeed(layerFocus) { layerSeeded.value = true }
+            content()
+        },
     )
 }
 

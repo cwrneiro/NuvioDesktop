@@ -87,10 +87,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.chrisbanes.haze.hazeEffect
 import com.nuvio.app.core.ui.NuvioAsyncImage as AsyncImage
 import com.nuvio.app.core.ui.NuvioTokens
+import com.nuvio.app.core.ui.NuvioModalFocusSeed
+import com.nuvio.app.core.ui.NuvioModalRegistration
 import com.nuvio.app.core.ui.PlatformBackHandler
 import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.core.ui.nuvioDebugFocusTag
 import com.nuvio.app.core.ui.nuvioFocusBorder
+import com.nuvio.app.core.ui.nuvioModalArrowNav
+import com.nuvio.app.core.ui.nuvioModalFocusTarget
 import com.nuvio.app.core.ui.requestFocusWhenPlaced
 import dev.chrisbanes.haze.HazeState
 import com.nuvio.app.isIos
@@ -295,6 +299,10 @@ fun ProfileSwitcherTab(
                 properties = PopupProperties(focusable = true),
                 onDismissRequest = dismissPopup,
             ) {
+                val layerFocus = remember { FocusRequester() }
+                val layerSeeded = remember { mutableStateOf(false) }
+                NuvioModalRegistration()
+                NuvioModalFocusSeed(layerFocus) { layerSeeded.value = true }
                 ProfilePopupContent(
                     profiles = profiles,
                     avatars = avatars,
@@ -304,15 +312,18 @@ fun ProfileSwitcherTab(
                     hazeState = hazeState,
                     opensBelow = opensBelow,
                     availableHeight = availableHeight,
-                    modifier = Modifier.graphicsLayer {
-                        alpha = popupAlpha.value
-                        scaleX = popupScale.value
-                        scaleY = popupScale.value
-                        transformOrigin = TransformOrigin(
-                            0.5f,
-                            if (opensBelow) 0f else 1f,
-                        )
-                    },
+                    modifier = Modifier
+                        .graphicsLayer {
+                            alpha = popupAlpha.value
+                            scaleX = popupScale.value
+                            scaleY = popupScale.value
+                            transformOrigin = TransformOrigin(
+                                0.5f,
+                                if (opensBelow) 0f else 1f,
+                            )
+                        }
+                        .nuvioModalFocusTarget(layerFocus, directionalTargetEnabled = !layerSeeded.value)
+                        .nuvioModalArrowNav(),
                     onBoundsChanged = { index, bounds -> profileBubbleBounds[index] = bounds },
                     onDismissRequest = dismissPopup,
                     onProfileSelected = ::chooseProfile,
@@ -862,6 +873,10 @@ fun NativeProfileSwitcherPopup(
                     properties = PopupProperties(focusable = true),
                     onDismissRequest = onDismissRequest,
                 ) {
+                    val layerFocus = remember { FocusRequester() }
+                    val layerSeeded = remember { mutableStateOf(false) }
+                    NuvioModalRegistration()
+                    NuvioModalFocusSeed(layerFocus) { layerSeeded.value = true }
                     Box(
                         modifier = Modifier
                             .imePadding()
@@ -876,7 +891,9 @@ fun NativeProfileSwitcherPopup(
                                 tokens.colors.surfaceSheet,
                                 tokens.shapes.sheet,
                             )
-                            .padding(tokens.spacing.sheetPadding),
+                            .padding(tokens.spacing.sheetPadding)
+                            .nuvioModalFocusTarget(layerFocus, directionalTargetEnabled = !layerSeeded.value)
+                            .nuvioModalArrowNav(),
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Row(

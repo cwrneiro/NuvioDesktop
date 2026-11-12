@@ -84,9 +84,13 @@ import com.nuvio.app.core.ui.NuvioBottomSheetActionRow
 import com.nuvio.app.core.ui.NuvioBottomSheetDivider
 import com.nuvio.app.core.ui.NuvioDesktopVerticalScrollbar
 import com.nuvio.app.core.ui.NuvioModalBottomSheet
+import com.nuvio.app.core.ui.NuvioModalFocusSeed
+import com.nuvio.app.core.ui.NuvioModalRegistration
 import com.nuvio.app.core.ui.NuvioToastController
 import com.nuvio.app.core.ui.dismissNuvioBottomSheet
 import com.nuvio.app.core.ui.nuvioFocusBorder
+import com.nuvio.app.core.ui.nuvioModalArrowNav
+import com.nuvio.app.core.ui.nuvioModalFocusTarget
 import com.nuvio.app.core.ui.requestFocusWhenPlaced
 import com.nuvio.app.core.ui.withDuplicateSafeLazyKeys
 import com.nuvio.app.features.downloads.DownloadsRepository
@@ -1240,6 +1244,10 @@ private fun DesktopStreamActionsMenu(
         onDismissRequest = onDismiss,
         properties = PopupProperties(focusable = true),
     ) {
+        val layerFocus = remember { FocusRequester() }
+        val layerSeeded = remember { mutableStateOf(false) }
+        NuvioModalRegistration()
+        NuvioModalFocusSeed(layerFocus) { layerSeeded.value = true }
         Column(
             modifier = Modifier
                 .width(244.dp)
@@ -1251,7 +1259,9 @@ private fun DesktopStreamActionsMenu(
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
                     shape = menuShape,
                 )
-                .padding(4.dp),
+                .padding(4.dp)
+                .nuvioModalFocusTarget(layerFocus, directionalTargetEnabled = !layerSeeded.value)
+                .nuvioModalArrowNav(),
         ) {
             actions.forEachIndexed { index, action ->
                 DesktopStreamActionRow(

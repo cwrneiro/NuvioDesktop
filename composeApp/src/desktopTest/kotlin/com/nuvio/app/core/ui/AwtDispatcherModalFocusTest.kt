@@ -1,6 +1,8 @@
 package com.nuvio.app.core.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -116,7 +118,7 @@ class AwtDispatcherModalFocusTest {
             }
 
             // The main window must own AWT focus before we can dispatch into it.
-            assertTrue("main window never took focus") { waitUntil { focusOwnerInside(mainWindow) } }
+            assertTrue("main window never took focus") { awaitMainFocus(mainWindow) }
             SwingUtilities.invokeLater { mainFocus?.requestFocus() }
             assertTrue("main-0 never gained focus") { waitUntil { focusLog.contains("main-0") } }
 
@@ -168,6 +170,196 @@ class AwtDispatcherModalFocusTest {
         }
     }
 
+    @Test
+    fun arrowsStayInsideOpenMenuAndNeverMoveBackgroundFocus() {
+        assumeTrue("set NUVIO_FOCUS_HW_TEST=1 to run this hardware test", System.getenv("NUVIO_FOCUS_HW_TEST") == "1")
+        assumeTrue("requires a display", !GraphicsEnvironment.isHeadless())
+
+        val focusLog = ConcurrentLinkedQueue<String>()
+        var mainWindow: ComposeWindow? = null
+        var mainFocus: FocusRequester? = null
+        var menuState: MutableState<Boolean>? = null
+
+        try {
+            SwingUtilities.invokeAndWait {
+                val window = ComposeWindow()
+                val requestMain = FocusRequester()
+                val requestMenu = FocusRequester()
+                val open = mutableStateOf(false)
+                mainWindow = window
+                mainFocus = requestMain
+                menuState = open
+                window.setContent {
+                    NuvioTheme {
+                        PlatformKeyboardNavigation()
+                        Box(Modifier.fillMaxSize()) {
+                            Column {
+                                repeat(3) { index ->
+                                    Box(
+                                        Modifier
+                                            .size(120.dp, 60.dp)
+                                            .background(Color.DarkGray)
+                                            .then(if (index == 0) Modifier.focusRequester(requestMain) else Modifier)
+                                            .onFocusChanged { if (it.isFocused) focusLog.add("main-$index") }
+                                            .clickable { },
+                                    )
+                                }
+                            }
+                            if (open.value) {
+                                Menu(expanded = true, onDismissRequest = { }) {
+                                    LaunchedEffect(Unit) { requestMenu.requestFocusWhenPlaced() }
+                                    repeat(3) { index ->
+                                        MenuItem(
+                                            text = "Item $index",
+                                            onClick = { },
+                                            modifier = Modifier
+                                                .then(if (index == 0) Modifier.focusRequester(requestMenu) else Modifier)
+                                                .onFocusChanged { if (it.isFocused) focusLog.add("menu-$index") },
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                window.setSize(640, 720)
+                window.isVisible = true
+                window.toFront()
+                window.requestFocus()
+            }
+
+            assertTrue("main window never took focus") { awaitMainFocus(mainWindow) }
+            SwingUtilities.invokeLater { mainFocus?.requestFocus() }
+            assertTrue("main-0 never gained focus") { waitUntil { focusLog.contains("main-0") } }
+
+            focusLog.clear()
+            postKey(mainWindow, KeyEvent.VK_DOWN)
+            assertTrue("dispatcher did not move focus in the main window") {
+                waitUntil { focusLog.any { it.startsWith("main-") } }
+            }
+
+            SwingUtilities.invokeLater { menuState?.value = true }
+            assertTrue("menu never took focus") { waitUntil { focusLog.any { it.startsWith("menu-") } } }
+
+            focusLog.clear()
+            repeat(2) {
+                postKey(mainWindow, KeyEvent.VK_DOWN)
+                Thread.sleep(250)
+            }
+            postKey(mainWindow, KeyEvent.VK_UP)
+            Thread.sleep(400)
+
+            assertTrue("arrows did not move focus inside the menu: $focusLog") {
+                focusLog.any { it.startsWith("menu-") }
+            }
+            assertTrue("background focus moved while the menu was open: $focusLog") {
+                focusLog.none { it.startsWith("main-") }
+            }
+        } finally {
+            SwingUtilities.invokeLater {
+                Window.getWindows().forEach { if (it.isVisible) it.dispose() }
+            }
+            Thread.sleep(200)
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun arrowsMoveInsideOpenBottomSheet() {
+        assumeTrue("set NUVIO_FOCUS_HW_TEST=1 to run this hardware test", System.getenv("NUVIO_FOCUS_HW_TEST") == "1")
+        assumeTrue("requires a display", !GraphicsEnvironment.isHeadless())
+
+        val focusLog = ConcurrentLinkedQueue<String>()
+        val sheetComposed = AtomicBoolean(false)
+        var mainWindow: ComposeWindow? = null
+        var mainFocus: FocusRequester? = null
+        var sheetOpenState: MutableState<Boolean>? = null
+
+        try {
+            SwingUtilities.invokeAndWait {
+                val window = ComposeWindow()
+                val requestMain = FocusRequester()
+                val open = mutableStateOf(false)
+                mainWindow = window
+                mainFocus = requestMain
+                sheetOpenState = open
+                window.setContent {
+                    NuvioTheme {
+                        PlatformKeyboardNavigation()
+                        Column(Modifier.fillMaxSize()) {
+                            repeat(3) { index ->
+                                Box(
+                                    Modifier
+                                        .size(120.dp, 60.dp)
+                                        .background(Color.DarkGray)
+                                        .then(if (index == 0) Modifier.focusRequester(requestMain) else Modifier)
+                                        .onFocusChanged { if (it.isFocused) focusLog.add("main-$index") }
+                                        .clickable { },
+                                )
+                            }
+                        }
+                        if (open.value) {
+                            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                            NuvioModalBottomSheet(
+                                onDismissRequest = { },
+                                sheetState = sheetState,
+                            ) {
+                                SideEffect { sheetComposed.set(true) }
+                                repeat(3) { index ->
+                                    NuvioBottomSheetActionRow(
+                                        title = "Row $index",
+                                        onClick = { },
+                                        modifier = Modifier.onFocusChanged {
+                                            if (it.isFocused) focusLog.add("sheet-$index")
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                window.setSize(640, 720)
+                window.isVisible = true
+                window.toFront()
+                window.requestFocus()
+            }
+
+            assertTrue("main window never took focus") { awaitMainFocus(mainWindow) }
+            SwingUtilities.invokeLater { mainFocus?.requestFocus() }
+            assertTrue("main-0 never gained focus") { waitUntil { focusLog.contains("main-0") } }
+
+            focusLog.clear()
+            postKey(mainWindow, KeyEvent.VK_DOWN)
+            assertTrue("dispatcher did not move focus in the main window") {
+                waitUntil { focusLog.any { it.startsWith("main-") } }
+            }
+
+            SwingUtilities.invokeLater { sheetOpenState?.value = true }
+            assertTrue("sheet never composed") { waitUntil { sheetComposed.get() } }
+            Thread.sleep(600)
+
+            focusLog.clear()
+            repeat(2) {
+                postKey(mainWindow, KeyEvent.VK_DOWN)
+                Thread.sleep(250)
+            }
+            postKey(mainWindow, KeyEvent.VK_UP)
+            Thread.sleep(400)
+
+            assertTrue("arrows did not move focus inside the sheet: $focusLog") {
+                focusLog.any { it.startsWith("sheet-") }
+            }
+            assertTrue("background focus moved while the sheet was open: $focusLog") {
+                focusLog.none { it.startsWith("main-") }
+            }
+        } finally {
+            SwingUtilities.invokeLater {
+                Window.getWindows().forEach { if (it.isVisible) it.dispose() }
+            }
+            Thread.sleep(200)
+        }
+    }
+
     /** Posts a real AWT key event as if the window's focus owner had typed it. */
     private fun postKey(window: Window?, keyCode: Int) {
         val focusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager()
@@ -175,6 +367,17 @@ class AwtDispatcherModalFocusTest {
         Toolkit.getDefaultToolkit().systemEventQueue.postEvent(
             KeyEvent(source, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, keyCode, KeyEvent.CHAR_UNDEFINED),
         )
+    }
+
+    /** Waits for AWT focus, re-requesting it (XWayland focus hand-off is flaky across test windows). */
+    private fun awaitMainFocus(window: Window?): Boolean = waitUntil(12_000) {
+        if (window != null && !focusOwnerInside(window)) {
+            SwingUtilities.invokeLater {
+                window.toFront()
+                window.requestFocus()
+            }
+        }
+        focusOwnerInside(window)
     }
 
     private fun focusOwnerInside(window: Window?): Boolean {

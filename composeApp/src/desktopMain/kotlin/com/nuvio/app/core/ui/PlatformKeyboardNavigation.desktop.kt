@@ -37,7 +37,10 @@ actual fun PlatformKeyboardNavigation() {
             // so moving focus through the main composition would land behind
             // the modal. Dialog content traverses its own focus instead
             // (NuvioModalDialog / nuvioModalArrowNav).
-            if (PlatformModalState.hasOpenDialog) return@KeyEventDispatcher false
+            if (PlatformModalState.hasOpenDialog) {
+                NuvioFocusDiagnostics.log("nuvio-nav-skip: modal=${PlatformModalState.openDialogs}")
+                return@KeyEventDispatcher false
+            }
             // Dialogs/menus/dropdown popups are separate ComposeWindows: when one
             // of them owns focus it must receive its own keys, so only handle
             // events that belong to the main window. A null window is a defensive

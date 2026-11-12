@@ -23,6 +23,9 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,6 +61,8 @@ fun NuvioModalBottomSheet(
         )
     } else {
         val tokens = MaterialTheme.nuvio
+        val layerFocus = remember { FocusRequester() }
+        val layerSeeded = remember { mutableStateOf(false) }
         ModalBottomSheet(
             onDismissRequest = onDismissRequest,
             sheetState = sheetState,
@@ -67,13 +72,17 @@ fun NuvioModalBottomSheet(
             scrimColor = tokens.colors.overlayScrim,
             dragHandle = null,
         ) {
+            NuvioModalRegistration()
+            NuvioModalFocusSeed(layerFocus) { layerSeeded.value = true }
             CompositionLocalProvider(LocalBottomInsetsConsumed provides true) {
                 Column(
                     modifier = modifier
                         .padding(NuvioTokens.Space.s10)
                         .clip(SheetShape)
                         .background(containerColor)
-                        .border(tokens.borders.thin, SurfaceEdge, SheetShape),
+                        .border(tokens.borders.thin, SurfaceEdge, SheetShape)
+                        .nuvioModalFocusTarget(layerFocus, directionalTargetEnabled = !layerSeeded.value)
+                        .nuvioModalArrowNav(),
                 ) {
                     if (showDragHandle) {
                         NuvioBottomSheetDragHandle(Modifier.align(Alignment.CenterHorizontally))

@@ -35,8 +35,8 @@ layers, or controller navigation.
 | `pr/focus-nav` | `d4bdf258` | 15 commits ahead; 992 behind `upstream/Dev` | Old Compose-native implementation and original findings |
 | `cwrn/packaging` | old `Dev` | 20 commits ahead; 992 behind `upstream/Dev` | Fork packaging + PR #180 rebase + earlier focus work |
 | `fix/settings-focus-handoff` | `c0eb7bfa7` | 2 commits ahead, 0 behind | Combined verified fixes; kept as evidence |
-| `fix/settings-category-focus-handoff` | `c0eb7bfa7` | 1 commit ahead, 0 behind | PR #1164 (issue #1162) |
-| `fix/settings-escape-hierarchy` | `c0eb7bfa7` | 1 commit ahead, 0 behind | PR #1165 (issue #1163) |
+| `fix/settings-category-focus-handoff` | `c0eb7bfa7` | 1 commit ahead, 0 behind | PR #1164 (issue #1171) |
+| `fix/settings-escape-hierarchy` | `c0eb7bfa7` | 1 commit ahead, 0 behind | PR #1165 (issue #1172) |
 
 Main working tree: `/home/carneiro/Documents/NuvioDesktop` (`pr/focus-nav`)
 
@@ -392,7 +392,9 @@ magick compare -metric AE before.png after.png diff.png
    2026-11-17; `upstream/Dev` is still `c0eb7bfa7`.
 2. ~~Push `fix/settings-focus-handoff` to `origin`.~~ Done; the two focused
    branches are pushed as well.
-3. ~~Open the two issue drafts in `docs/issues/`.~~ Done: #1162 and #1163.
+3. ~~Open the two issue drafts in `docs/issues/`.~~ Done: #1171 and #1172.
+   The earlier pair, #1162 and #1163, was closed by the unlabeled-issue workflow
+   before the template fix and is kept for history.
 4. ~~Open focused PRs against `NuvioMedia:Dev` linking those issues.~~ Done:
    #1164 (category handoff) and #1165 (Escape hierarchy). Both are mergeable.
    `pr-template-check` is `action_required` on both, waiting for maintainer
@@ -406,12 +408,12 @@ magick compare -metric AE before.png after.png diff.png
 
 ## Published issues and PRs
 
-- Issue #1162 (category and content focus handoff), open. Label request comment
-  posted; it still needs the `bug` label:
-  https://github.com/NuvioMedia/NuvioDesktop/issues/1162
-- Issue #1163 (Escape subpage hierarchy), open. Label request comment posted;
-  it still needs the `bug` label:
-  https://github.com/NuvioMedia/NuvioDesktop/issues/1163
+- Issue #1171 (category and content focus handoff), open with the `bug` label,
+  created through the desktop bug form:
+  https://github.com/NuvioMedia/NuvioDesktop/issues/1171
+- Issue #1172 (Escape subpage hierarchy), open with the `bug` label, created
+  through the desktop bug form:
+  https://github.com/NuvioMedia/NuvioDesktop/issues/1172
 - PR #1164 (category handoff), ready for review with before and after proof
   attached:
   https://github.com/NuvioMedia/NuvioDesktop/pull/1164
@@ -419,11 +421,23 @@ magick compare -metric AE before.png after.png diff.png
   screenshots are required:
   https://github.com/NuvioMedia/NuvioDesktop/pull/1165
 
+Earlier issues #1162 and #1163 were closed by the unlabeled-issue workflow
+because they were created through the API and the `bug` label did not apply.
+They are kept for history and point at the replacements in their comments.
+
 Original drafts kept for reference:
 
 - `docs/issues/settings-category-focus-handoff.md`
 - `docs/issues/settings-escape-hierarchy.md`
 - `docs/pr/settings-focus-fixes.md` (combined draft, superseded by the two PRs)
+
+### Creating a bug issue with the form
+
+`gh issue create --template` does not see YAML issue forms, and `--label bug` is
+silently dropped for accounts without triage access. Use GraphQL `createIssue`
+with `issueTemplate: "Desktop bug report"` in the input. GitHub then applies the
+form's `bug` label. The mutation needs `repositoryId`, `title`, `body`, and
+`issueTemplate`.
 
 ## Reference commits
 

@@ -34,7 +34,9 @@ layers, or controller navigation.
 |---|---|---|---|
 | `pr/focus-nav` | `d4bdf258` | 15 commits ahead; 992 behind `upstream/Dev` | Old Compose-native implementation and original findings |
 | `cwrn/packaging` | old `Dev` | 20 commits ahead; 992 behind `upstream/Dev` | Fork packaging + PR #180 rebase + earlier focus work |
-| `fix/settings-focus-handoff` | `c0eb7bfa7` | 2 commits ahead, 0 behind | Current verified fixes on latest `Dev` |
+| `fix/settings-focus-handoff` | `c0eb7bfa7` | 2 commits ahead, 0 behind | Combined verified fixes; kept as evidence |
+| `fix/settings-category-focus-handoff` | `c0eb7bfa7` | 1 commit ahead, 0 behind | PR #1164 (issue #1162) |
+| `fix/settings-escape-hierarchy` | `c0eb7bfa7` | 1 commit ahead, 0 behind | PR #1165 (issue #1163) |
 
 Main working tree: `/home/carneiro/Documents/NuvioDesktop` (`pr/focus-nav`)
 
@@ -386,19 +388,36 @@ magick compare -metric AE before.png after.png diff.png
 
 ## Suggested next steps
 
-1. Confirm upstream `Dev` is still `c0eb7bfa7` or rebase.
-2. Push `fix/settings-focus-handoff` to `origin`.
-3. Open the two issue drafts in `docs/issues/`.
-4. Open focused PRs against `NuvioMedia:Dev` linking those issues.
-5. Then port modal + text/slider + anchor fixes as separate PRs.
-6. Add automated tests as part of each port; do not ship another large untested
+1. ~~Confirm upstream `Dev` is still `c0eb7bfa7` or rebase.~~ Confirmed
+   2026-11-17; `upstream/Dev` is still `c0eb7bfa7`.
+2. ~~Push `fix/settings-focus-handoff` to `origin`.~~ Done; the two focused
+   branches are pushed as well.
+3. ~~Open the two issue drafts in `docs/issues/`.~~ Done: #1162 and #1163.
+4. ~~Open focused PRs against `NuvioMedia:Dev` linking those issues.~~ Done:
+   #1164 (category handoff) and #1165 (Escape hierarchy). Both are mergeable,
+   with no CI checks reported on the fork branches.
+5. Attach the after-fix screenshots (`focus-seq.png`, `07-esc.png`) to the PRs.
+   The pre-fix baseline was lost to a reboot.
+6. Then port modal + text/slider + anchor fixes as separate PRs.
+7. Add automated tests as part of each port; do not ship another large untested
    navigation rewrite.
 
-## Issue and PR drafts
+## Published issues and PRs
+
+- Issue #1162 (category → content focus handoff):
+  https://github.com/NuvioMedia/NuvioDesktop/issues/1162
+- Issue #1163 (Escape subpage hierarchy):
+  https://github.com/NuvioMedia/NuvioDesktop/issues/1163
+- PR #1164 (category handoff):
+  https://github.com/NuvioMedia/NuvioDesktop/pull/1164
+- PR #1165 (Escape hierarchy):
+  https://github.com/NuvioMedia/NuvioDesktop/pull/1165
+
+Original drafts kept for reference:
 
 - `docs/issues/settings-category-focus-handoff.md`
 - `docs/issues/settings-escape-hierarchy.md`
-- `docs/pr/settings-focus-fixes.md`
+- `docs/pr/settings-focus-fixes.md` (combined draft, superseded by the two PRs)
 
 ## Reference commits
 

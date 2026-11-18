@@ -112,7 +112,7 @@ The sane path is:
 
 ## Verified gaps in current `Dev` (pre-fix)
 
-### Bug 1: Settings category → content focus handoff
+### Bug 1: Settings category and content focus handoff
 
 Reproduced on `c0eb7bfa7`, Linux Hyprland/Wayland, fullscreen:
 
@@ -146,23 +146,23 @@ Fix: `c95e70356`
 
 Verified after fix:
 
-- Tab → `You` ring
-- Right → `Appearance` ring
-- Down → `Layout` ring
-- Left → `Look` category ring
-- No dead focus, no wrap
+- Tab focuses `You`.
+- Right focuses `Appearance`.
+- Down focuses `Layout`.
+- Left returns to the `Look` category.
+- No dead focus, no wrap.
 
 ### Bug 2: Escape from a Settings subpage
 
 Reproduced on `c0eb7bfa7`:
 
-1. Settings → Look
+1. Open Settings and select Look.
 2. Focus `Appearance`, press Enter
 3. Press Esc once
 
 Observed:
 
-- Returned to Home instead of `Settings → Look`.
+- Returned to Home instead of the Look page in Settings.
 - With a naive back-handler stack, Escape did nothing at all.
 
 Root cause:
@@ -180,8 +180,8 @@ Fix: `6d31b3d35`
 
 Verified after fix:
 
-- Enter on Appearance → subpage
-- Esc → `Settings → Look`, not Home
+- Enter on Appearance opens the subpage.
+- Esc returns to the Look page in Settings, not Home.
 
 ## Evidence
 
@@ -394,23 +394,29 @@ magick compare -metric AE before.png after.png diff.png
    branches are pushed as well.
 3. ~~Open the two issue drafts in `docs/issues/`.~~ Done: #1162 and #1163.
 4. ~~Open focused PRs against `NuvioMedia:Dev` linking those issues.~~ Done:
-   #1164 (category handoff) and #1165 (Escape hierarchy). Both are mergeable,
-   with no CI checks reported on the fork branches.
-5. Attach the after-fix screenshots (`focus-seq.png`, `07-esc.png`) to the PRs.
-   The pre-fix baseline was lost to a reboot.
+   #1164 (category handoff) and #1165 (Escape hierarchy). Both are mergeable.
+   `pr-template-check` is `action_required` on both, waiting for maintainer
+   approval of the workflow runs.
+5. ~~Attach the after-fix screenshots to the PRs.~~ Done for #1164: before and
+   after images are attached and the PR is ready for review. #1165 is behavior
+   only, so it does not need images.
 6. Then port modal + text/slider + anchor fixes as separate PRs.
 7. Add automated tests as part of each port; do not ship another large untested
    navigation rewrite.
 
 ## Published issues and PRs
 
-- Issue #1162 (category → content focus handoff):
+- Issue #1162 (category and content focus handoff), open. Label request comment
+  posted; it still needs the `bug` label:
   https://github.com/NuvioMedia/NuvioDesktop/issues/1162
-- Issue #1163 (Escape subpage hierarchy):
+- Issue #1163 (Escape subpage hierarchy), open. Label request comment posted;
+  it still needs the `bug` label:
   https://github.com/NuvioMedia/NuvioDesktop/issues/1163
-- PR #1164 (category handoff):
+- PR #1164 (category handoff), ready for review with before and after proof
+  attached:
   https://github.com/NuvioMedia/NuvioDesktop/pull/1164
-- PR #1165 (Escape hierarchy):
+- PR #1165 (Escape hierarchy), ready for review. Behavior only, so no
+  screenshots are required:
   https://github.com/NuvioMedia/NuvioDesktop/pull/1165
 
 Original drafts kept for reference:

@@ -10,13 +10,13 @@ Linux, Hyprland/Wayland, 1920x1080, fullscreen, built from source.
 
 ## Steps to reproduce
 
-1. Open Settings → Look.
+1. Open Settings and select Look.
 2. Focus Appearance and press Enter.
 3. Press Esc once.
 
 ## Expected behavior
 
-Return to Settings → Look, the parent page.
+Return to the Look page in Settings.
 
 ## Actual behavior
 

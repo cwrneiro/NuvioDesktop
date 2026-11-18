@@ -4,7 +4,7 @@
 
 Fixes two desktop keyboard-navigation bugs in the current `Dev` focus implementation:
 
-1. Settings category → content focus handoff.
+1. Settings category and content focus handoff.
 2. Escape from a Settings subpage returning to Home.
 
 ## PR type
@@ -55,12 +55,12 @@ Fixes the two linked issues:
 
 - Built current `Dev` + these two commits.
 - Manually tested on Linux Hyprland/Wayland, fullscreen:
-  - Tab → You ring
-  - Right → Appearance ring
-  - Down → Layout ring
-  - Left → Look ring
-  - Enter on Appearance → subpage
-  - Esc → Settings → Look, not Home
+  - Tab focused You.
+  - Right moved to Appearance.
+  - Down moved to Layout.
+  - Left returned to Look.
+  - Enter on Appearance opened the subpage.
+  - Esc returned to Look in Settings, not Home.
 - Native player bridge built successfully.
 - Build used memory-capped Gradle settings; no OOM.
 

@@ -15,9 +15,9 @@ its OSK when a tracked Compose text field gains focus.
   On Done it unmaps the shell so sway returns keyboard focus to Nuvio, then
   pipes the buffer to `cwr-osk-type` (`wtype -s 250 -`). Cancel returns to the
   app without sending. Text is never in argv or the journal (length only).
-- **Cooldown.** The shell ignores re-open requests for 5 s after a commit or
-  cancel. When the shell unmaps, Nuvio may report the same field as a new
-  focus edge; without the cooldown that would re-open the OSK in a loop.
+- **Cooldown.** The shell ignores re-open requests for a short window after a
+  commit or cancel. When the shell unmaps, Nuvio may report the same field as
+  a new focus edge; without the cooldown that would re-open the OSK in a loop.
 
 ## Patch
 

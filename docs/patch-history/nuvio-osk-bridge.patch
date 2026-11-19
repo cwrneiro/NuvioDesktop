@@ -1,0 +1,33 @@
+diff --git a/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/DesktopTextInputState.kt b/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/DesktopTextInputState.kt
+index b5974ffd2..ccc263ab6 100644
+--- a/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/DesktopTextInputState.kt
++++ b/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/DesktopTextInputState.kt
+@@ -50,7 +50,27 @@ internal object DesktopTextInputState {
+     }
+ 
+     private fun syncMirror() {
+-        PlatformTextInputState.isActive = isActive
++        val wasActive = PlatformTextInputState.isActive
++        val active = isActive
++        PlatformTextInputState.isActive = active
+         PlatformTextInputState.isMultilineActive = isMultilineActive
++        if (!wasActive && active) requestExternalOsk()
+     }
++
++    /**
++     * cwrneirOS: ask the TV shell to open its on-screen keyboard for this app.
++     * The shell cannot observe another client's text-field focus, so this
++     * desktop focus edge is the trigger. Fire-and-forget: the helper is absent
++     * on non-appliance desktops, where the failure is ignored.
++     */
++    private fun requestExternalOsk() {
++        runCatching {
++            ProcessBuilder(EXTERNAL_OSK_HELPER, "nuvio")
++                .redirectOutput(ProcessBuilder.Redirect.DISCARD)
++                .redirectError(ProcessBuilder.Redirect.DISCARD)
++                .start()
++        }
++    }
++
++    private const val EXTERNAL_OSK_HELPER = "/run/current-system/sw/bin/cwr-osk-show"
+ }

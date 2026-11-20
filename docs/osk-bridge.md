@@ -14,9 +14,10 @@ its OSK when a tracked Compose text field gains focus.
   non-appliance desktops; the failure is ignored.
 - **Shell.** `tvshell oskExternal <label>` maps a bottom-only OSK over the app
   (the main shell stays hidden, so the text field remains visible). On Done it
-  unmaps the keyboard so sway returns keyboard focus to Nuvio, then pipes the
-  buffer to `cwr-osk-type` (`wtype -s 250 -`). Cancel returns to the app
-  without sending. Text is never in argv or the journal (length only).
+  unmaps the keyboard and pipes the buffer to `cwr-osk-type`
+  (`ydotool type -f -`). `wtype` was rejected on hardware: its events never
+  reached AWT; uinput does. Cancel returns to the app without sending. Text is
+  never in argv or the journal (length only).
 - **Cooldown.** The shell ignores re-open requests for a short window after a
   commit or cancel. When the shell unmaps, Nuvio may report the same field as
   a new focus edge; without the cooldown that would re-open the OSK in a loop.

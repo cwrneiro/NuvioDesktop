@@ -1,26 +1,20 @@
 diff --git a/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/DesktopTextInputState.kt b/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/DesktopTextInputState.kt
-index b5974ffd2..ccc263ab6 100644
+index b5974ffd2..a0d8fa79d 100644
 --- a/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/DesktopTextInputState.kt
 +++ b/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/DesktopTextInputState.kt
-@@ -50,7 +50,27 @@ internal object DesktopTextInputState {
-     }
- 
-     private fun syncMirror() {
--        PlatformTextInputState.isActive = isActive
-+        val wasActive = PlatformTextInputState.isActive
-+        val active = isActive
-+        PlatformTextInputState.isActive = active
+@@ -53,4 +53,22 @@ internal object DesktopTextInputState {
+         PlatformTextInputState.isActive = isActive
          PlatformTextInputState.isMultilineActive = isMultilineActive
-+        if (!wasActive && active) requestExternalOsk()
      }
 +
 +    /**
-+     * cwrneirOS: ask the TV shell to open its on-screen keyboard for this app.
-+     * The shell cannot observe another client's text-field focus, so this
-+     * desktop focus edge is the trigger. Fire-and-forget: the helper is absent
-+     * on non-appliance desktops, where the failure is ignored.
++     * cwrneirOS: the user SELECTED a tracked text field (A/Enter), so ask the
++     * TV shell to open its on-screen keyboard. Focus alone is not enough —
++     * D-pad navigation moves focus through fields without starting text entry.
++     * Fire-and-forget: the helper is absent on non-appliance desktops, where
++     * the failure is ignored.
 +     */
-+    private fun requestExternalOsk() {
++    fun onFieldSelected() {
 +        runCatching {
 +            ProcessBuilder(EXTERNAL_OSK_HELPER, "nuvio")
 +                .redirectOutput(ProcessBuilder.Redirect.DISCARD)
@@ -31,3 +25,55 @@ index b5974ffd2..ccc263ab6 100644
 +
 +    private const val EXTERNAL_OSK_HELPER = "/run/current-system/sw/bin/cwr-osk-show"
  }
+diff --git a/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/TextInputTracker.desktop.kt b/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/TextInputTracker.desktop.kt
+index 356dc5cff..c7499d4a2 100644
+--- a/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/TextInputTracker.desktop.kt
++++ b/composeApp/src/desktopMain/kotlin/com/nuvio/app/core/ui/TextInputTracker.desktop.kt
+@@ -5,6 +5,11 @@ import androidx.compose.runtime.remember
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.composed
+ import androidx.compose.ui.focus.onFocusChanged
++import androidx.compose.ui.input.key.Key
++import androidx.compose.ui.input.key.KeyEventType
++import androidx.compose.ui.input.key.key
++import androidx.compose.ui.input.key.onPreviewKeyEvent
++import androidx.compose.ui.input.key.type
+ 
+ /**
+  * cwrneirOS fix (text-field arrow tracker): desktop actual. Registers a focus
+@@ -18,7 +23,20 @@ actual fun Modifier.nuvioTracksTextInput(singleLine: Boolean): Modifier = compos
+     }
+     // isFocused (not hasFocus): a focused trailing icon/clear button inside the
+     // field must not keep the text-input gate on.
+-    this.onFocusChanged { tracker.onFocusChanged(it.isFocused) }
++    this
++        .onFocusChanged { tracker.onFocusChanged(it.isFocused) }
++        .onPreviewKeyEvent { event ->
++            // cwrneirOS: A is Enter. Open the TV OSK only when the user
++            // SELECTS the field, not when D-pad navigation merely focuses it.
++            // The event is not consumed: the field still sees the activation.
++            if (tracker.isFocused
++                && event.type == KeyEventType.KeyDown
++                && (event.key == Key.Enter || event.key == Key.NumPadEnter)
++            ) {
++                tracker.onSelected()
++            }
++            false
++        }
+ }
+ 
+ /**
+@@ -35,6 +53,13 @@ private class TextInputFocusTracker(
+ ) {
+     private var focused = false
+ 
++    val isFocused: Boolean
++        get() = focused
++
++    fun onSelected() {
++        if (focused) DesktopTextInputState.onFieldSelected()
++    }
++
+     fun onFocusChanged(isFocused: Boolean) {
+         if (isFocused == focused) return
+         focused = isFocused

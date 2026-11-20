@@ -5,6 +5,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 
 /**
  * cwrneirOS fix (text-field arrow tracker): desktop actual. Registers a focus
@@ -18,7 +23,20 @@ actual fun Modifier.nuvioTracksTextInput(singleLine: Boolean): Modifier = compos
     }
     // isFocused (not hasFocus): a focused trailing icon/clear button inside the
     // field must not keep the text-input gate on.
-    this.onFocusChanged { tracker.onFocusChanged(it.isFocused) }
+    this
+        .onFocusChanged { tracker.onFocusChanged(it.isFocused) }
+        .onPreviewKeyEvent { event ->
+            // cwrneirOS: A is Enter. Open the TV OSK only when the user
+            // SELECTS the field, not when D-pad navigation merely focuses it.
+            // The event is not consumed: the field still sees the activation.
+            if (tracker.isFocused
+                && event.type == KeyEventType.KeyDown
+                && (event.key == Key.Enter || event.key == Key.NumPadEnter)
+            ) {
+                tracker.onSelected()
+            }
+            false
+        }
 }
 
 /**
@@ -34,6 +52,13 @@ private class TextInputFocusTracker(
     private val multiline: Boolean,
 ) {
     private var focused = false
+
+    val isFocused: Boolean
+        get() = focused
+
+    fun onSelected() {
+        if (focused) DesktopTextInputState.onFieldSelected()
+    }
 
     fun onFocusChanged(isFocused: Boolean) {
         if (isFocused == focused) return

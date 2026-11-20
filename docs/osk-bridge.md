@@ -7,14 +7,16 @@ its OSK when a tracked Compose text field gains focus.
 
 ## Contract
 
-- **Trigger.** `DesktopTextInputState.syncMirror` runs on the desktop text
-  tracker's focus edges. On the 0 → 1 edge it spawns
-  `/run/current-system/sw/bin/cwr-osk-show nuvio` fire-and-forget. The helper
-  is absent on non-appliance desktops; the failure is ignored.
-- **Shell.** `tvshell oskExternal <label>` shows the shell's OSK over the app.
-  On Done it unmaps the shell so sway returns keyboard focus to Nuvio, then
-  pipes the buffer to `cwr-osk-type` (`wtype -s 250 -`). Cancel returns to the
-  app without sending. Text is never in argv or the journal (length only).
+- **Trigger.** The tracker observes `onPreviewKeyEvent` on each tracked field.
+  When that field is focused and the user presses A (Enter/NumPadEnter), it
+  spawns `/run/current-system/sw/bin/cwr-osk-show nuvio` fire-and-forget. D-pad
+  focus alone does not open the keyboard. The helper is absent on
+  non-appliance desktops; the failure is ignored.
+- **Shell.** `tvshell oskExternal <label>` maps a bottom-only OSK over the app
+  (the main shell stays hidden, so the text field remains visible). On Done it
+  unmaps the keyboard so sway returns keyboard focus to Nuvio, then pipes the
+  buffer to `cwr-osk-type` (`wtype -s 250 -`). Cancel returns to the app
+  without sending. Text is never in argv or the journal (length only).
 - **Cooldown.** The shell ignores re-open requests for a short window after a
   commit or cancel. When the shell unmaps, Nuvio may report the same field as
   a new focus edge; without the cooldown that would re-open the OSK in a loop.

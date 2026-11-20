@@ -50,20 +50,18 @@ internal object DesktopTextInputState {
     }
 
     private fun syncMirror() {
-        val wasActive = PlatformTextInputState.isActive
-        val active = isActive
-        PlatformTextInputState.isActive = active
+        PlatformTextInputState.isActive = isActive
         PlatformTextInputState.isMultilineActive = isMultilineActive
-        if (!wasActive && active) requestExternalOsk()
     }
 
     /**
-     * cwrneirOS: ask the TV shell to open its on-screen keyboard for this app.
-     * The shell cannot observe another client's text-field focus, so this
-     * desktop focus edge is the trigger. Fire-and-forget: the helper is absent
-     * on non-appliance desktops, where the failure is ignored.
+     * cwrneirOS: the user SELECTED a tracked text field (A/Enter), so ask the
+     * TV shell to open its on-screen keyboard. Focus alone is not enough —
+     * D-pad navigation moves focus through fields without starting text entry.
+     * Fire-and-forget: the helper is absent on non-appliance desktops, where
+     * the failure is ignored.
      */
-    private fun requestExternalOsk() {
+    fun onFieldSelected() {
         runCatching {
             ProcessBuilder(EXTERNAL_OSK_HELPER, "nuvio")
                 .redirectOutput(ProcessBuilder.Redirect.DISCARD)
